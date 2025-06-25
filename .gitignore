@@ -14,6 +14,7 @@ host/generated_complete/
 # Ignore IDE specific files
 .idea/
 .vscode/
+.vs/
 
 # Ignore system files
 .DS_Store
@@ -48,8 +49,20 @@ Thumbs.db
 *.vscode/tasks.json
 *.vscode/launch.json
 *.vscode/extensions.json
+*.VC.db
 
 # Ignore Windows SDK and related files
 host/packages/
 host/generated_complete/
 host/third_party/
+
+# Exclude additional large files and directories
+host/out/
+host/packages/**/bin/
+host/packages/**/build/
+host/packages/**/lib/
+host/packages/**/manifests/
+host/packages/**/runtimes/
+host/packages/**/tools/
+host/packages/**/x64/
+host/packages/**/x86/

@@ -48,3 +48,8 @@ Thumbs.db
 *.vscode/tasks.json
 *.vscode/launch.json
 *.vscode/extensions.json
+
+# Ignore Windows SDK and related files
+host/packages/
+host/generated_complete/
+host/third_party/

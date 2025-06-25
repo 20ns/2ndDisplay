@@ -1,26 +1,57 @@
 # =====================================
-# Build Directories and Output Files
+# Build Directories and Output Files (AGGRESSIVE)
 # =====================================
+# Catch ALL build directories anywhere
 **/build/
+**/build/**
 **/out/
+**/out/**
 **/bin/
+**/bin/**
 **/obj/
+**/obj/**
 **/debug/
+**/debug/**
 **/release/
+**/release/**
 **/Debug/
+**/Debug/**
 **/Release/
+**/Release/**
 **/x64/
+**/x64/**
 **/x86/
+**/x86/**
 **/ARM/
+**/ARM/**
 **/ARM64/
+**/ARM64/**
+build/
+out/
+bin/
+obj/
 
-# Android specific build directories
+# Android specific build directories (AGGRESSIVE)
+android/
+!android/gradle.properties
+!android/gradlew
+!android/gradlew.bat
+!android/settings.gradle
+!android/app/build.gradle
+!android/app/src/
 android/app/build/
+android/app/build/**
 android/build/
+android/build/**
 android/.gradle/
+android/.gradle/**
 android/app/.cxx/
+android/app/.cxx/**
 android/app/src/main/libs/
+android/app/src/main/libs/**
 android/local.properties
+.gradle/
+.gradle/**
 
 # C++ specific build artifacts
 **/*.exe
@@ -93,18 +124,65 @@ local.properties
 *.xcworkspace
 
 # =====================================
-# Windows SDK and Dependencies
+# Windows SDK and Dependencies (SUPER AGGRESSIVE)
 # =====================================
-# Windows SDK packages and related files
+# Exclude ALL packages and dependencies
+packages/
+packages/**
 **/packages/
+**/packages/**
 **/packages.config
 **/.nuget/
+**/.nuget/**
 **/nuget.exe
+node_modules/
+node_modules/**
+**/node_modules/
+**/node_modules/**
+
+# Generated files and headers (MASSIVE)
+generated_complete/
+generated_complete/**
 **/generated_complete/
+**/generated_complete/**
+generated_winui3/
+generated_winui3/**
 **/generated_winui3/
+**/generated_winui3/**
+generated/
+generated/**
+**/generated/
+**/generated/**
+
+# Dependencies and third party (HUGE FILES)
+_deps/
+_deps/**
 **/_deps/
+**/_deps/**
+third_party/
+third_party/**
 **/third_party/
+**/third_party/**
+CPM_modules/
+CPM_modules/**
 **/CPM_modules/
+**/CPM_modules/**
+vendor/
+vendor/**
+**/vendor/
+**/vendor/**
+
+# Windows specific directories
+host/packages/
+host/packages/**
+host/generated_complete/
+host/generated_complete/**
+host/generated_winui3/
+host/generated_winui3/**
+host/third_party/
+host/third_party/**
+host/build/
+host/build/**
 
 # Windows specific generated files
 *.manifest
@@ -199,34 +277,90 @@ Icon?
 .nfs*
 
 # =====================================
-# Large Binary Files and Media
+# Large Binary Files and Media (SUPER AGGRESSIVE)
 # =====================================
-# Common large file extensions
-*.zip
-*.rar
-*.7z
-*.tar
-*.gz
-*.bz2
-*.xz
-*.iso
-*.dmg
-*.img
+# All executable and binary files
+**/*.exe
+**/*.dll
+**/*.pdb
+**/*.obj
+**/*.lib
+**/*.a
+**/*.so
+**/*.dylib
+**/*.bin
+**/*.dat
+**/*.dump
 
-# Media files (if not needed in repo)
-# *.mp4
-# *.avi
-# *.mov
-# *.mkv
-# *.mp3
-# *.wav
-# *.flac
+# Archive files (can be huge)
+**/*.zip
+**/*.rar
+**/*.7z
+**/*.tar
+**/*.gz
+**/*.bz2
+**/*.xz
+**/*.iso
+**/*.dmg
+**/*.img
+**/*.msi
+**/*.msix
+**/*.cab
+**/*.pkg
+**/*.deb
+**/*.rpm
+
+# Database and cache files
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.cache
+**/*.tmp
+**/*.temp
+
+# Large development files
+**/*.pch
+**/*.gch
+**/*.ipch
+**/*.idb
+**/*.ilk
+**/*.exp
+**/*.map
+**/*.symbols
+**/*.debug
+**/*.crashdump
+
+# Media files that might be accidentally included
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.aac
+*.wma
+*.ogg
+*.m4a
+# Only uncomment these if you don't need images in your repo
 # *.png
 # *.jpg
 # *.jpeg
 # *.gif
 # *.bmp
 # *.tiff
+# *.ico
+# *.svg
+
+# Virtual machine and container files
+*.vmdk
+*.vhd
+*.vhdx
+*.qcow2
+*.img
 
 # =====================================
 # Version Control
@@ -254,3 +388,69 @@ site/
 # Add your project-specific large files here
 TabDisplay.log
 host/TabDisplay.exe
+
+# =====================================
+# EMERGENCY: Catch All Large File Patterns
+# =====================================
+# Any file larger than typical source code
+# (Git LFS should handle large files, but we exclude them entirely)
+
+# Catch common large file patterns that might slip through
+**/intermediates/
+**/intermediates/**
+**/outputs/
+**/outputs/**
+**/reports/
+**/reports/**
+**/kotlin/
+**/kotlin/**
+
+# Android specific large directories
+android/app/build/generated/
+android/app/build/generated/**
+android/app/build/intermediates/
+android/app/build/intermediates/**
+android/app/build/outputs/
+android/app/build/outputs/**
+android/app/build/kotlin/
+android/app/build/kotlin/**
+android/app/build/tmp/
+android/app/build/tmp/**
+
+# Host specific large directories  
+host/build/vs2022-release/
+host/build/vs2022-release/**
+host/build/*/
+host/build/**
+host/CMakeFiles/
+host/CMakeFiles/**
+
+# Catch any missed CMake artifacts
+**/CMakeFiles/
+**/CMakeFiles/**
+**/cmake_install.cmake
+**/compile_commands.json
+**/CTestTestfile.cmake
+**/*.ninja
+**/build.ninja
+**/.ninja_deps
+**/.ninja_log
+**/cpm-package-lock.cmake
+
+# Large IDE caches
+**/.vs/
+**/.vs/**
+**/.vscode/ipch/
+**/.vscode/ipch/**
+**/.idea/
+**/.idea/**
+
+# Windows App SDK large files
+**/Microsoft.Windows*/
+**/Microsoft.Windows*/**
+**/Microsoft.UI*/
+**/Microsoft.UI*/**
+**/winrt/
+**/winrt/**
+
+# =====================================

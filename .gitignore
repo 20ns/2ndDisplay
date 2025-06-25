@@ -1,0 +1,50 @@
+# Ignore build directories
+build/
+android/app/build/
+host/build/
+
+# Ignore generated files
+android/app/build/generated/
+host/generated_complete/
+
+# Ignore temporary files
+*.tmp
+*.log
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore other unnecessary files
+*.bak
+*.swp
+*.swo
+*.user
+*.sln
+*.ninja
+*.cmake
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib
+*.idb
+*.ipch
+*.pch
+*.ilk
+*.manifest
+*.tlog
+*.lastbuildstate
+*.opensdf
+*.sdf
+*.vcxproj*
+*.vcproj*
+*.vc.db
+*.vscode/settings.json
+*.vscode/tasks.json
+*.vscode/launch.json
+*.vscode/extensions.json

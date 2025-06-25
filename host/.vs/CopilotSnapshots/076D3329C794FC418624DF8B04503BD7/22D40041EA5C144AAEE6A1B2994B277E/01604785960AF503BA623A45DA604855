@@ -1,0 +1,98 @@
+﻿#pragma once
+
+#include <string>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <queue>
+#include <functional>
+#include <WinSock2.h>
+#include <Windows.h>
+
+#include "Packet.hpp"
+
+namespace TabDisplay {
+
+class UdpSender {
+public:
+    // Struct for incoming touch event data
+    struct TouchEvent {
+        enum class Type {
+            DOWN,
+            MOVE,
+            UP
+        };
+
+        Type type;
+        uint32_t x;
+        uint32_t y;
+        uint32_t pointerId;
+    };
+
+    UdpSender();
+    ~UdpSender();
+
+    // Initialize sender with remote address
+    bool initialize(const std::string& remoteIp, uint16_t remotePort);
+
+    // Send frame data (handles chunking internally)
+    bool sendFrame(const std::vector<uint8_t>& frameData, bool isKeyFrame);
+
+    // Send keepalive packet with current stream parameters
+    bool sendKeepAlive(uint32_t width, uint32_t height, uint32_t fps, uint32_t bitrate);
+
+    // Start receiving touch events
+    bool startReceiving();
+
+    // Stop receiving touch events
+    void stopReceiving();
+    
+    // Broadcast discovery packet
+    bool sendDiscoveryPacket();
+
+    // Get list of discovered devices
+    std::vector<std::string> getDiscoveredDevices() const;
+
+    // Set callback for touch events
+    using TouchEventCallback = std::function<void(const TouchEvent&)>;
+    void setTouchEventCallback(TouchEventCallback callback);
+
+    // Get current statistics
+    double getCurrentBandwidthMbps() const;
+    double getCurrentLatencyMs() const;
+
+private:
+    // Receiving thread function
+    void receiveThread();
+    
+    // Discovery handling
+    void handleDiscoveryResponse(const std::string& data, const sockaddr_in& fromAddr);
+
+    // Socket and addressing
+    SOCKET socket_;
+    sockaddr_in remoteAddr_;
+    
+    // Packet sequencing
+    std::atomic<uint16_t> nextSequenceId_;
+    std::atomic<uint16_t> nextFrameId_;
+    std::atomic<uint16_t> framesSinceKeepAlive_;
+
+    // Thread management
+    std::atomic<bool> running_;
+    std::unique_ptr<std::thread> receiveThreadPtr_;
+    std::mutex sendMutex_;
+
+    // Touch event callback
+    TouchEventCallback touchEventCallback_;
+
+    // Statistics
+    std::atomic<double> currentBandwidthMbps_;
+    std::atomic<double> currentLatencyMs_;
+    
+    // Discovered devices
+    mutable std::mutex discoveredDevicesMutex_;
+    std::vector<std::string> discoveredDevices_;
+};
+
+} // namespace TabDisplay

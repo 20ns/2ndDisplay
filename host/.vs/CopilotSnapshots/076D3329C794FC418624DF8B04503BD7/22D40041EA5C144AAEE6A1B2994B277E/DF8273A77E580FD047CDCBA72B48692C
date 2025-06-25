@@ -1,0 +1,51 @@
+﻿{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "vs2022-base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "cl.exe"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": ["Windows"]
+                }
+            }
+        },
+        {
+            "name": "vs2022-debug",
+            "displayName": "Visual Studio 2022 (Debug)",
+            "inherits": "vs2022-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "vs2022-release",
+            "displayName": "Visual Studio 2022 (Release)",
+            "inherits": "vs2022-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "vs2022-debug",
+            "configurePreset": "vs2022-debug"
+        },
+        {
+            "name": "vs2022-release",
+            "configurePreset": "vs2022-release"
+        }
+    ]
+}

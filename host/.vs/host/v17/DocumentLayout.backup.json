@@ -1,0 +1,448 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Nav\\Desktop\\display\\host\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\EncoderAMF.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\EncoderAMF.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\Settings.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\Settings.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\CMakePresets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakePresets.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\Packet.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\Packet.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\Version.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\Version.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|CMake Overview Pages||{B1CAA5B0-FEB1-4350-8AB9-F895876842F2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\cmake\\CPM.cmake||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:cmake\\CPM.cmake||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\cmake\\TabDisplay-config.cmake.in||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:cmake\\TabDisplay-config.cmake.in||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\CaptureDXGI.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\CaptureDXGI.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\EncoderAMF.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\EncoderAMF.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\UdpSender.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\UdpSender.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\InputInjector.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\InputInjector.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\include\\Settings.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:include\\Settings.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\CaptureDXGI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\CaptureDXGI.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\UdpSender.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\UdpSender.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\InputInjector.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\InputInjector.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\TrayApp.xaml.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\TrayApp.xaml.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\src\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\build-instructions.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:build-instructions.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\brief-protocol.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:brief-protocol.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\CHANGELOG.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CHANGELOG.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\third_party\\fec\\FEC.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:third_party\\fec\\FEC.hpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\third_party\\fec\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:third_party\\fec\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Nav\\Desktop\\display\\host\\resources\\icon.txt||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:resources\\icon.txt||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "vcpkg.cmake",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+              "ViewState": "AgIAAG8DAAAAAAAAAAAjwHwDAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-06-24T17:12:58.549Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Settings.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\Settings.cpp",
+              "RelativeDocumentMoniker": "src\\Settings.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\Settings.cpp",
+              "RelativeToolTip": "src\\Settings.cpp",
+              "ViewState": "AgIAALsAAAAAAAAAAAAUwM8AAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T16:02:10.914Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "UdpSender.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\UdpSender.cpp",
+              "RelativeDocumentMoniker": "src\\UdpSender.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\UdpSender.cpp",
+              "RelativeToolTip": "src\\UdpSender.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIgBAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T16:00:04.227Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "EncoderAMF.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\EncoderAMF.cpp",
+              "RelativeDocumentMoniker": "src\\EncoderAMF.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\EncoderAMF.cpp",
+              "RelativeToolTip": "src\\EncoderAMF.cpp",
+              "ViewState": "AgIAAHkBAAAAAAAAAAAUwI0BAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T15:58:00.055Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CMakeLists.txt",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\CMakeLists.txt",
+              "RelativeDocumentMoniker": "CMakeLists.txt",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\CMakeLists.txt",
+              "RelativeToolTip": "CMakeLists.txt",
+              "ViewState": "AgIAAC0AAAAAAAAAAAD4vzoAAABEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-06-24T15:49:50.013Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "InputInjector.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\InputInjector.cpp",
+              "RelativeDocumentMoniker": "src\\InputInjector.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\InputInjector.cpp",
+              "RelativeToolTip": "src\\InputInjector.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAMgAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T16:01:18.007Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "CaptureDXGI.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\CaptureDXGI.cpp",
+              "RelativeDocumentMoniker": "src\\CaptureDXGI.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\CaptureDXGI.cpp",
+              "RelativeToolTip": "src\\CaptureDXGI.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACQBAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T15:56:00.386Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "Settings.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\Settings.hpp",
+              "RelativeDocumentMoniker": "include\\Settings.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\Settings.hpp",
+              "RelativeToolTip": "include\\Settings.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD8AAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:54:35.508Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Packet.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\Packet.hpp",
+              "RelativeDocumentMoniker": "include\\Packet.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\Packet.hpp",
+              "RelativeToolTip": "include\\Packet.hpp",
+              "ViewState": "AgIAANsAAAAAAAAAAAAjwP4AAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:52:31.226Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "CMakePresets.json",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\CMakePresets.json",
+              "RelativeDocumentMoniker": "CMakePresets.json",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\CMakePresets.json",
+              "RelativeToolTip": "CMakePresets.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-06-24T15:50:04.529Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "TrayApp.xaml.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\TrayApp.xaml.cpp",
+              "RelativeDocumentMoniker": "src\\TrayApp.xaml.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\TrayApp.xaml.cpp",
+              "RelativeToolTip": "src\\TrayApp.xaml.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAACAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T16:05:22.305Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "FEC.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\third_party\\fec\\FEC.hpp",
+              "RelativeDocumentMoniker": "third_party\\fec\\FEC.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\third_party\\fec\\FEC.hpp",
+              "RelativeToolTip": "third_party\\fec\\FEC.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIwAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T16:08:27.867Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "icon.txt",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\resources\\icon.txt",
+              "RelativeDocumentMoniker": "resources\\icon.txt",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\resources\\icon.txt",
+              "RelativeToolTip": "resources\\icon.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-06-24T16:08:58.337Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "CMakeLists.txt",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\third_party\\fec\\CMakeLists.txt",
+              "RelativeDocumentMoniker": "third_party\\fec\\CMakeLists.txt",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\third_party\\fec\\CMakeLists.txt",
+              "RelativeToolTip": "third_party\\fec\\CMakeLists.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-06-24T16:08:46.977Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "CHANGELOG.md",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\CHANGELOG.md",
+              "RelativeDocumentMoniker": "CHANGELOG.md",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\CHANGELOG.md",
+              "RelativeToolTip": "CHANGELOG.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAABBAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-06-24T16:07:08.447Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "brief-protocol.md",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\brief-protocol.md",
+              "RelativeDocumentMoniker": "brief-protocol.md",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\brief-protocol.md",
+              "RelativeToolTip": "brief-protocol.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAF0AAAA9AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-06-24T16:06:48.447Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "build-instructions.md",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\build-instructions.md",
+              "RelativeDocumentMoniker": "build-instructions.md",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\build-instructions.md",
+              "RelativeToolTip": "build-instructions.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFEAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-06-24T16:06:13.627Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "main.cpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\main.cpp",
+              "RelativeDocumentMoniker": "src\\main.cpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\src\\main.cpp",
+              "RelativeToolTip": "src\\main.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-24T16:05:46.555Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "InputInjector.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\InputInjector.hpp",
+              "RelativeDocumentMoniker": "include\\InputInjector.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\InputInjector.hpp",
+              "RelativeToolTip": "include\\InputInjector.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFEAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:54:14.322Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "CaptureDXGI.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\CaptureDXGI.hpp",
+              "RelativeDocumentMoniker": "include\\CaptureDXGI.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\CaptureDXGI.hpp",
+              "RelativeToolTip": "include\\CaptureDXGI.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFwAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:52:58.07Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "EncoderAMF.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\EncoderAMF.hpp",
+              "RelativeDocumentMoniker": "include\\EncoderAMF.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\EncoderAMF.hpp",
+              "RelativeToolTip": "include\\EncoderAMF.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFgAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:53:24.164Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "UdpSender.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\UdpSender.hpp",
+              "RelativeDocumentMoniker": "include\\UdpSender.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\UdpSender.hpp",
+              "RelativeToolTip": "include\\UdpSender.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGEAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:53:50.342Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Version.hpp",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\Version.hpp",
+              "RelativeDocumentMoniker": "include\\Version.hpp",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\include\\Version.hpp",
+              "RelativeToolTip": "include\\Version.hpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-24T15:51:12.352Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "TabDisplay-config.cmake.in",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\cmake\\TabDisplay-config.cmake.in",
+              "RelativeDocumentMoniker": "cmake\\TabDisplay-config.cmake.in",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\cmake\\TabDisplay-config.cmake.in",
+              "RelativeToolTip": "cmake\\TabDisplay-config.cmake.in",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-06-24T15:50:58.747Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "CPM.cmake",
+              "DocumentMoniker": "C:\\Users\\Nav\\Desktop\\display\\host\\cmake\\CPM.cmake",
+              "RelativeDocumentMoniker": "cmake\\CPM.cmake",
+              "ToolTip": "C:\\Users\\Nav\\Desktop\\display\\host\\cmake\\CPM.cmake",
+              "RelativeToolTip": "cmake\\CPM.cmake",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-06-24T15:50:48.262Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "CMake Overview Pages",
+              "DocumentMoniker": "CMake Overview Pages",
+              "ToolTip": "CMake Overview Pages",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-06-24T15:49:52.733Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Microsoft.WindowsAppSDK CONFIG QUIET)
+if(NOT Microsoft.WindowsAppSDK_FOUND)
+    add_library(Microsoft.WindowsAppSDK INTERFACE IMPORTED)
+    target_link_libraries(Microsoft.WindowsAppSDK INTERFACE windowsapp)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/TabDisplayTargets.cmake")

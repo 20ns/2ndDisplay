@@ -1,0 +1,23 @@
+# Changelog
+
+All notable changes to the TabDisplay project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2025-06-24
+
+### Added
+- Initial release of TabDisplay
+- DXGI Desktop Duplication API for screen capture
+- AMD Advanced Media Framework (AMF) hardware encoding
+- Support for three display profiles:
+  - 1080p 60Hz
+  - 1752×2800 60Hz
+  - 1752×2800 120Hz
+- UDP packet transport with FEC (Forward Error Correction)
+- XOR-based parity chunk generation for packet loss recovery
+- WinUI 3 tray application with settings UI
+- Device discovery via UDP broadcast
+- Touch input injection using ViGEmBus
+- Settings persistence in %LOCALAPPDATA%\TabDisplay\settings.json

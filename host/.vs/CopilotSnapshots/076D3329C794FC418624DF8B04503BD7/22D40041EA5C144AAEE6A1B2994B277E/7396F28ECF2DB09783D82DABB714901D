@@ -1,0 +1,82 @@
+﻿# TabDisplay Build Instructions
+
+This document describes how to build and run the TabDisplay application.
+
+## Prerequisites
+
+- **Visual Studio 2022** with the following workloads:
+  - Desktop development with C++
+  - Windows 11 SDK (22621)
+  - MSIX Packaging Tools
+
+- **CMake** ≥ 3.24
+- **Ninja** build system (recommended)
+- **AMD Driver** with AMD Advanced Media Framework (AMF) support
+
+## Building the Project
+
+### Using CMake Presets
+
+The project includes CMake presets for easier configuration. To build:
+
+1. Clone the repository
+2. Open a Developer Command Prompt for Visual Studio 2022
+3. Navigate to the project directory
+4. Run the following commands:
+
+```
+cmake --preset vs2022-release
+cmake --build --preset vs2022-release
+```
+
+For a debug build, use `vs2022-debug` instead.
+
+### Using Visual Studio 2022
+
+1. Open Visual Studio 2022
+2. Select "Open a local folder" and navigate to the project directory
+3. Visual Studio should detect the CMake project
+4. Select "x64-Release" from the configuration dropdown
+5. Build the project using Build → Build All
+
+## Dependencies
+
+The project automatically fetches and configures the following dependencies:
+
+- **spdlog** - Fast C++ logging library
+- **nlohmann_json** - JSON for Modern C++
+- **FEC library** - Forward Error Correction implementation
+
+## External Dependencies
+
+The project requires the following external dependencies:
+
+- **AMD Advanced Media Framework (AMF)** - Included with AMD drivers
+- **ViGEmBus** - Virtual Gamepad Emulation Bus driver
+
+### Installing ViGEmBus
+
+1. Download the latest ViGEmBus installer from: https://github.com/ViGEm/ViGEmBus/releases
+2. Run the installer and follow the instructions
+3. Restart your computer after installation
+
+## Running the Application
+
+After building:
+
+1. Navigate to the build directory (`build/vs2022-release/bin/`)
+2. Run `TabDisplay.exe`
+
+The application will start in the system tray. Right-click on the tray icon to access the menu.
+
+## Troubleshooting
+
+- Ensure AMD drivers are up to date
+- Check that ViGEmBus is properly installed
+- Look for logs in `TabDisplay.log` in the application directory
+
+## Developer Notes
+
+- The project uses C++20 features
+- Warnings are treated as errors (/WX)
+- All packets are defined in `Packet.hpp`

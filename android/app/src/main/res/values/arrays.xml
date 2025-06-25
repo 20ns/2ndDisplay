@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="display_mode_entries">
+        <item>@string/resolution_1080p_60hz</item>
+        <item>@string/resolution_tablet_60hz</item>
+        <item>@string/resolution_tablet_120hz</item>
+    </string-array>
+
+    <string-array name="display_mode_values">
+        <item>1080p_60hz</item>
+        <item>tablet_60hz</item>
+        <item>tablet_120hz</item>
+    </string-array>
+</resources>
+

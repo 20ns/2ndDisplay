@@ -1,0 +1,19 @@
+﻿#pragma once
+
+#include <string>
+#include <string_view>
+
+namespace TabDisplay {
+
+// Version constants
+constexpr int VERSION_MAJOR = 0;
+constexpr int VERSION_MINOR = 1;
+constexpr int VERSION_PATCH = 0;
+
+// Get version string in format "major.minor.patch"
+constexpr std::string_view VERSION_STRING = "0.1.0";
+
+// App name
+constexpr std::string_view APP_NAME = "TabDisplay";
+
+} // namespace TabDisplay

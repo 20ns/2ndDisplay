@@ -1,0 +1,6 @@
+﻿@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Microsoft.WindowsAppSDK REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/TabDisplayTargets.cmake")

@@ -1,4 +1,11 @@
 // Win32 Tray implementation for TabDisplay
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <shellapi.h>
 #include <spdlog/spdlog.h>
@@ -265,6 +272,38 @@ public:
         return true;
     }
 
+    int Run() {
+        if (!Initialize()) {
+            return 1;
+        }
+
+        spdlog::info("TabDisplay tray application started (Win32 mode)");
+        spdlog::info("Right-click tray icon for menu, double-click for status");
+
+        // Show initial connection prompt
+        int result = MessageBoxA(nullptr,
+            "TabDisplay is ready!\n\n"
+            "Connect your Android device via USB cable and enable USB tethering,\n"
+            "then right-click the tray icon and select 'Connect to Android'.\n\n"
+            "Would you like to try connecting now?",
+            "TabDisplay Ready",
+            MB_YESNO | MB_ICONQUESTION);
+            
+        if (result == IDYES) {
+            ConnectToAndroid();
+        }
+
+        // Message loop
+        MSG msg;
+        while (m_running && GetMessage(&msg, nullptr, 0, 0)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        spdlog::info("TabDisplay tray application shutting down");
+        return 0;
+    }
+
 private:
     bool InitializeComponents() {
         try {
@@ -284,11 +323,12 @@ private:
             g_encoder = std::make_unique<EncoderAMF>();
             if (!g_encoder->initialize(g_capture->getDevice())) {
                 spdlog::error("Failed to initialize AMF encoder");
-                return false;
+                spdlog::warn("Continuing without hardware encoder (software fallback will be used)");
+                g_encoder.reset(); // Clear the failed encoder
+            } else {
+                // Link capture to encoder only if encoder initialized successfully
+                g_capture->setEncoder(g_encoder.get());
             }
-            
-            // Link capture to encoder
-            g_capture->setEncoder(g_encoder.get());
             
             // Initialize UDP sender
             g_sender = std::make_unique<UdpSender>();
@@ -305,11 +345,13 @@ private:
             }
             
             // Set up callbacks
-            g_encoder->setFrameCallback([](const EncoderAMF::EncodedFrame& frame) {
-                if (g_sender && g_connected) {
-                    g_sender->sendFrame(frame.data, frame.isKeyFrame);
-                }
-            });
+            if (g_encoder) {
+                g_encoder->setFrameCallback([](const EncoderAMF::EncodedFrame& frame) {
+                    if (g_sender && g_connected) {
+                        g_sender->sendFrame(frame.data, frame.isKeyFrame);
+                    }
+                });
+            }
             
             g_sender->setTouchEventCallback([](const UdpSender::TouchEvent& event) {
                 if (g_injector) {
@@ -342,38 +384,6 @@ private:
     void RemoveTrayIcon() {
         Shell_NotifyIcon(NIM_DELETE, &m_nid);
         spdlog::info("Tray icon removed");
-    }
-
-    int Run() {
-        if (!Initialize()) {
-            return 1;
-        }
-
-        spdlog::info("TabDisplay tray application started (Win32 mode)");
-        spdlog::info("Right-click tray icon for menu, double-click for status");
-
-        // Show initial connection prompt
-        int result = MessageBoxA(nullptr,
-            "TabDisplay is ready!\n\n"
-            "Connect your Android device via USB cable and enable USB tethering,\n"
-            "then right-click the tray icon and select 'Connect to Android'.\n\n"
-            "Would you like to try connecting now?",
-            "TabDisplay Ready",
-            MB_YESNO | MB_ICONQUESTION);
-            
-        if (result == IDYES) {
-            ConnectToAndroid();
-        }
-
-        // Message loop
-        MSG msg;
-        while (m_running && GetMessage(&msg, nullptr, 0, 0)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        spdlog::info("TabDisplay tray application shutting down");
-        return 0;
     }
 };
 

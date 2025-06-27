@@ -23,7 +23,35 @@ UdpSender::UdpSender()
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0) {
         spdlog::error("WSAStartup failed: {}", result);
+        return;
     }
+    
+    // Create UDP socket for receiving (can send later when initialized)
+    socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (socket_ == INVALID_SOCKET) {
+        spdlog::error("Failed to create socket: {}", WSAGetLastError());
+        return;
+    }
+    
+    // Enable broadcast
+    int broadcastEnable = 1;
+    if (setsockopt(socket_, SOL_SOCKET, SO_BROADCAST, (char*)&broadcastEnable, sizeof(broadcastEnable)) < 0) {
+        spdlog::error("Failed to set SO_BROADCAST: {}", WSAGetLastError());
+    }
+
+    // Set receive buffer size
+    int recvBufSize = 1024 * 1024; // 1MB buffer
+    if (setsockopt(socket_, SOL_SOCKET, SO_RCVBUF, (char*)&recvBufSize, sizeof(recvBufSize)) < 0) {
+        spdlog::error("Failed to set receive buffer size: {}", WSAGetLastError());
+    }
+
+    // Set send buffer size
+    int sendBufSize = 1024 * 1024; // 1MB buffer
+    if (setsockopt(socket_, SOL_SOCKET, SO_SNDBUF, (char*)&sendBufSize, sizeof(sendBufSize)) < 0) {
+        spdlog::error("Failed to set send buffer size: {}", WSAGetLastError());
+    }
+    
+    spdlog::info("UDP socket created and configured");
 }
 
 UdpSender::~UdpSender()
@@ -40,32 +68,9 @@ UdpSender::~UdpSender()
 
 bool UdpSender::initialize(const std::string& remoteIp, uint16_t remotePort)
 {
-    // Create UDP socket
-    socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (socket_ == INVALID_SOCKET) {
-        spdlog::error("Failed to create socket: {}", WSAGetLastError());
+        spdlog::error("Socket not created in constructor");
         return false;
-    }
-    
-    // Enable broadcast
-    int broadcastEnable = 1;
-    if (setsockopt(socket_, SOL_SOCKET, SO_BROADCAST, (char*)&broadcastEnable, sizeof(broadcastEnable)) < 0) {
-        spdlog::error("Failed to set SO_BROADCAST: {}", WSAGetLastError());
-        closesocket(socket_);
-        socket_ = INVALID_SOCKET;
-        return false;
-    }
-
-    // Set receive buffer size
-    int recvBufSize = 1024 * 1024; // 1MB buffer
-    if (setsockopt(socket_, SOL_SOCKET, SO_RCVBUF, (char*)&recvBufSize, sizeof(recvBufSize)) < 0) {
-        spdlog::error("Failed to set receive buffer size: {}", WSAGetLastError());
-    }
-
-    // Set send buffer size
-    int sendBufSize = 1024 * 1024; // 1MB buffer
-    if (setsockopt(socket_, SOL_SOCKET, SO_SNDBUF, (char*)&sendBufSize, sizeof(sendBufSize)) < 0) {
-        spdlog::error("Failed to set send buffer size: {}", WSAGetLastError());
     }
 
     // Set remote address

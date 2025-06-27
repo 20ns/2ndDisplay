@@ -1,8 +1,16 @@
 #include "UsbDeviceDiscovery.hpp"
 #include <spdlog/spdlog.h>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#include <windows.h>
 #include <algorithm>
 #include <cctype>
 
@@ -27,6 +35,8 @@ UsbDeviceDiscovery::~UsbDeviceDiscovery() {
 std::vector<UsbDeviceInfo> UsbDeviceDiscovery::findAndroidDevices() {
     std::vector<UsbDeviceInfo> devices;
     
+    spdlog::info("Starting Android device discovery...");
+    
     // Get adapter information
     ULONG bufferSize = 0;
     DWORD result = GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, nullptr, nullptr, &bufferSize);
@@ -35,6 +45,8 @@ std::vector<UsbDeviceInfo> UsbDeviceDiscovery::findAndroidDevices() {
         spdlog::error("Failed to get adapter buffer size: {}", result);
         return devices;
     }
+    
+    spdlog::info("Allocated buffer size: {} bytes", bufferSize);
     
     std::vector<char> buffer(bufferSize);
     PIP_ADAPTER_ADDRESSES adapters = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer.data());
@@ -47,12 +59,7 @@ std::vector<UsbDeviceInfo> UsbDeviceDiscovery::findAndroidDevices() {
     
     // Iterate through adapters
     for (PIP_ADAPTER_ADDRESSES adapter = adapters; adapter != nullptr; adapter = adapter->Next) {
-        // Skip loopback and non-operational interfaces
-        if (adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK || 
-            adapter->OperStatus != IfOperStatusUp) {
-            continue;
-        }
-        
+        // Get adapter name first for logging
         std::string adapterName;
         if (adapter->FriendlyName) {
             // Convert wide string to string
@@ -63,8 +70,19 @@ std::vector<UsbDeviceInfo> UsbDeviceDiscovery::findAndroidDevices() {
             }
         }
         
+        spdlog::info("Checking network adapter: '{}' (Type: {}, Status: {})", 
+                    adapterName, adapter->IfType, adapter->OperStatus);
+        
+        // Skip loopback and non-operational interfaces
+        if (adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK || 
+            adapter->OperStatus != IfOperStatusUp) {
+            spdlog::debug("Skipping adapter '{}' - loopback or not operational", adapterName);
+            continue;
+        }
+        
         // Check if this looks like an Android RNDIS interface
         if (!isAndroidInterface(adapterName)) {
+            spdlog::debug("Adapter '{}' does not look like Android interface", adapterName);
             continue;
         }
         
@@ -81,10 +99,38 @@ std::vector<UsbDeviceInfo> UsbDeviceDiscovery::findAndroidDevices() {
                 
                 std::string ipAddress(ipStr);
                 
-                // Skip localhost and automatic private IP addressing (APIPA)
-                if (ipAddress.substr(0, 7) == "127.0.0" || 
-                    ipAddress.substr(0, 7) == "169.254") {
+                spdlog::info("Found IP address {} on interface {}", ipAddress, adapterName);
+                
+                // Skip localhost
+                if (ipAddress.substr(0, 7) == "127.0.0") {
+                    spdlog::debug("Skipping localhost address: {}", ipAddress);
                     continue;
+                }
+                
+                // Handle link-local addresses (169.254.x.x) - these might be USB connections
+                if (ipAddress.substr(0, 7) == "169.254") {
+                    spdlog::info("Found link-local address: {} - checking for Android device", ipAddress);
+                    // For link-local, try to find the Android device by testing common gateway patterns
+                    std::vector<std::string> linkLocalGateways = {
+                        "169.254.1.1",     // Common gateway for USB connections
+                        "169.254.208.1",   // Derived from the IP we saw (169.254.208.21)
+                        "169.254.208.129", // Another common pattern
+                    };
+                    
+                    for (const auto& testIP : linkLocalGateways) {
+                        spdlog::info("Testing connectivity to potential Android device at: {}", testIP);
+                        if (testConnectivity(testIP)) {
+                            UsbDeviceInfo deviceInfo;
+                            deviceInfo.ipAddress = testIP;
+                            deviceInfo.interfaceName = adapterName;
+                            deviceInfo.deviceName = getDeviceName(adapterName);
+                            devices.push_back(deviceInfo);
+                            
+                            spdlog::info("Successfully found Android device at link-local IP: {}", testIP);
+                            return devices; // Return immediately on first success
+                        }
+                    }
+                    continue; // Skip further processing for link-local
                 }
                 
                 spdlog::info("Found IP address on Android interface: {}", ipAddress);
@@ -173,6 +219,8 @@ bool UsbDeviceDiscovery::isAndroidInterface(const std::string& interfaceName) {
     std::string lowerName = interfaceName;
     std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
     
+    spdlog::debug("Checking if '{}' is an Android interface", interfaceName);
+    
     // Look for keywords that suggest Android USB connection
     std::vector<std::string> androidKeywords = {
         "android",
@@ -188,10 +236,21 @@ bool UsbDeviceDiscovery::isAndroidInterface(const std::string& interfaceName) {
     
     for (const auto& keyword : androidKeywords) {
         if (lowerName.find(keyword) != std::string::npos) {
+            spdlog::info("Interface '{}' matches Android keyword: '{}'", interfaceName, keyword);
             return true;
         }
     }
     
+    // For testing: also check generic ethernet interfaces that might be USB connections
+    // This helps catch cases where the interface name isn't obviously Android-related
+    if (lowerName.find("ethernet") != std::string::npos && 
+        (lowerName.find("2") != std::string::npos || lowerName.find("3") != std::string::npos || 
+         lowerName.find("4") != std::string::npos || lowerName.find("usb") != std::string::npos)) {
+        spdlog::info("Interface '{}' looks like a secondary ethernet interface (possibly USB)", interfaceName);
+        return true;
+    }
+    
+    spdlog::debug("Interface '{}' does not appear to be Android-related", interfaceName);
     return false;
 }
 

@@ -151,7 +151,7 @@ struct TouchInputPacket {
 // Helper functions
 
 // Split frame data into chunks and add headers
-std::vector<std::vector<uint8_t>> createPackets(const std::vector<uint8_t>& frameData, 
+inline std::vector<std::vector<uint8_t>> createPackets(const std::vector<uint8_t>& frameData, 
                                                uint16_t frameId, uint16_t sequenceIdStart,
                                                bool isKeyFrame) {
     std::vector<std::vector<uint8_t>> packets;
@@ -186,7 +186,7 @@ std::vector<std::vector<uint8_t>> createPackets(const std::vector<uint8_t>& fram
 }
 
 // Create a keepalive control packet
-std::vector<uint8_t> createControlPacket(uint16_t sequenceId, uint32_t width, uint32_t height, 
+inline std::vector<uint8_t> createControlPacket(uint16_t sequenceId, uint32_t width, uint32_t height, 
                                         uint32_t fps, uint32_t bitrate, uint32_t touchPort) {
     ControlPacket control;
     control.type = "keepalive";
@@ -219,7 +219,7 @@ std::vector<uint8_t> createControlPacket(uint16_t sequenceId, uint32_t width, ui
 }
 
 // Calculate XOR parity chunks for FEC
-std::vector<std::vector<uint8_t>> createParityChunks(const std::vector<std::vector<uint8_t>>& dataChunks,
+inline std::vector<std::vector<uint8_t>> createParityChunks(const std::vector<std::vector<uint8_t>>& dataChunks,
                                                    uint16_t frameId, uint16_t sequenceIdStart) {
     // We'll create 2 parity chunks based on specification
     std::vector<std::vector<uint8_t>> parityChunks(2);

@@ -3,6 +3,8 @@
 // application can still link and run (doing nothing more than logging a
 // warning and exiting immediately).
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #include <spdlog/spdlog.h>
 

@@ -2,6 +2,8 @@
 #include <spdlog/spdlog.h>
 #include <fstream>
 #include <filesystem>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <Windows.h>
 #include <ShlObj.h>
 

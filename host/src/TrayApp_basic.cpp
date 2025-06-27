@@ -1,4 +1,6 @@
 // Temporary simplified TrayApp implementation while WinUI 3 is being set up
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <spdlog/spdlog.h>
 

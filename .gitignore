@@ -31,14 +31,11 @@ out/
 bin/
 obj/
 CLAUDE.md
-# Android specific build directories (AGGRESSIVE)
-android/
-!android/gradle.properties
-!android/gradlew
-!android/gradlew.bat
-!android/settings.gradle
-!android/app/build.gradle
-!android/app/src/
+# =====================================
+# Android Project Files (COMPREHENSIVE)
+# =====================================
+
+# Android build outputs and generated files
 android/app/build/
 android/app/build/**
 android/build/
@@ -49,7 +46,47 @@ android/app/.cxx/
 android/app/.cxx/**
 android/app/src/main/libs/
 android/app/src/main/libs/**
+
+# Android Studio / Gradle specific
 android/local.properties
+android/.idea/
+android/.idea/**
+android/app/.idea/
+android/app/.idea/**
+android/captures/
+android/captures/**
+
+# Android generated files
+android/app/src/main/gen/
+android/app/src/main/gen/**
+android/app/src/main/res/values/google_services_api.xml
+android/app/google-services.json
+android/app/src/debug/google-services.json
+android/app/src/release/google-services.json
+
+# Android lint
+android/lint-results*.xml
+android/lint-results*/
+android/lint-results*/**
+
+# Android profiling
+android/*.hprof
+android/app/*.hprof
+
+# Gradle wrapper (keep these)
+# !android/gradle/
+# !android/gradlew
+# !android/gradlew.bat
+
+# Keep important Android source files
+# !android/app/src/
+# !android/app/build.gradle
+# !android/build.gradle
+# !android/gradle.properties
+# !android/settings.gradle
+# !android/proguard-rules.pro
+# !android/app/proguard-rules.pro
+
 .gradle/
 .gradle/**
 
@@ -416,6 +453,39 @@ android/app/build/kotlin/
 android/app/build/kotlin/**
 android/app/build/tmp/
 android/app/build/tmp/**
+
+# Additional Android artifacts
+android/app/build/reports/
+android/app/build/reports/**
+android/app/build/test-results/
+android/app/build/test-results/**
+android/app/build/jacoco/
+android/app/build/jacoco/**
+
+# Android NDK
+android/app/src/main/jniLibs/
+android/app/src/main/jniLibs/**
+android/app/.externalNativeBuild/
+android/app/.externalNativeBuild/**
+
+# Android APK/AAB output files
+android/app/build/outputs/apk/
+android/app/build/outputs/apk/**
+android/app/build/outputs/bundle/
+android/app/build/outputs/bundle/**
+*.apk
+*.aab
+*.ap_
+
+# Android Keystore files (IMPORTANT: Keep these secret!)
+*.jks
+*.keystore
+android/keystore.properties
+android/app/keystore.properties
+
+# Android signing reports
+android/app/build/outputs/mapping/
+android/app/build/outputs/mapping/**
 
 # Host specific large directories  
 host/build/vs2022-release/

@@ -1,53 +1,37 @@
 // Win32 Tray implementation for TabDisplay
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include <WinSock2.h>
 #include <windows.h>
 #include <shellapi.h>
 #include <spdlog/spdlog.h>
 #include <memory>
 #include <thread>
 #include <chrono>
-
-// Include our core components
-#include "CaptureDXGI.hpp"
-#include "EncoderAMF.hpp"
-#include "UdpSender.hpp"
-#include "InputInjector.hpp"
-#include "Settings.hpp"
 #include "UsbDeviceDiscovery.hpp"
+#include "UdpSender.hpp"
 
 #define WM_TRAYICON (WM_USER + 1)
+#define WM_DISCOVERY_COMPLETE (WM_USER + 2)
 #define ID_TRAY_EXIT 1001
 #define ID_TRAY_SHOW 1002
-#define ID_TRAY_CONNECT 1003
-#define ID_TRAY_DISCONNECT 1004
-#define ID_TRAY_MODE_PRIMARY 1005
-#define ID_TRAY_MODE_SECOND 1006
-#define ID_TRAY_MODE_CUSTOM 1007
+#define ID_TRAY_DISCOVER 1003
+#define ID_TRAY_CONNECT_BASE 2000
 
 namespace TabDisplay {
-
-// Global components
-std::unique_ptr<CaptureDXGI> g_capture;
-std::unique_ptr<EncoderAMF> g_encoder;
-std::unique_ptr<UdpSender> g_sender;
-std::unique_ptr<InputInjector> g_injector;
-std::unique_ptr<UsbDeviceDiscovery> g_discovery;
-
-// Connection state
-bool g_connected = false;
-std::string g_connectedDevice;
 
 class SimpleTrayApp {
 private:
     HWND m_hwnd;
     NOTIFYICONDATA m_nid;
     bool m_running;
+    
+    // Discovery and connection components
+    std::unique_ptr<UsbDeviceDiscovery> deviceDiscovery_;
+    std::unique_ptr<UdpSender> udpSender_;
+    std::vector<UsbDeviceInfo> discoveredDevices_;
+    bool discoveryInProgress_;
+    std::unique_ptr<std::thread> discoveryThread_;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SimpleTrayApp* app = reinterpret_cast<SimpleTrayApp*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -72,29 +56,28 @@ private:
             case ID_TRAY_SHOW:
                 ShowStatusDialog();
                 break;
-            case ID_TRAY_CONNECT:
-                ConnectToAndroid();
-                break;
-            case ID_TRAY_DISCONNECT:
-                DisconnectFromAndroid();
-                break;
-            case ID_TRAY_MODE_PRIMARY:
-                SetCaptureMode(CaptureDXGI::CaptureMode::PrimaryMonitor);
-                break;
-            case ID_TRAY_MODE_SECOND:
-                SetCaptureMode(CaptureDXGI::CaptureMode::SecondMonitor);
-                break;
-            case ID_TRAY_MODE_CUSTOM:
-                ConfigureCustomRegion();
+            case ID_TRAY_DISCOVER:
+                StartDiscovery();
                 break;
             case ID_TRAY_EXIT:
                 spdlog::info("User requested exit from tray menu");
                 m_running = false;
                 PostQuitMessage(0);
                 break;
+            default:
+                // Handle device connection commands
+                if (LOWORD(wParam) >= ID_TRAY_CONNECT_BASE) {
+                    int deviceIndex = LOWORD(wParam) - ID_TRAY_CONNECT_BASE;
+                    ConnectToDevice(deviceIndex);
+                }
+                break;
             }
             break;
+        case WM_DISCOVERY_COMPLETE:
+            OnDiscoveryComplete();
+            break;
         case WM_DESTROY:
+            StopAllOperations();
             RemoveTrayIcon();
             PostQuitMessage(0);
             break;
@@ -110,20 +93,22 @@ private:
         AppendMenuW(menu, MF_STRING, ID_TRAY_SHOW, L"Show Status");
         AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
         
-        if (g_connected) {
-            AppendMenuW(menu, MF_STRING, ID_TRAY_DISCONNECT, L"Disconnect");
+        // Discovery option
+        if (discoveryInProgress_) {
+            AppendMenuW(menu, MF_STRING | MF_GRAYED, ID_TRAY_DISCOVER, L"Discovering Android Devices...");
         } else {
-            AppendMenuW(menu, MF_STRING, ID_TRAY_CONNECT, L"Connect to Android");
+            AppendMenuW(menu, MF_STRING, ID_TRAY_DISCOVER, L"Find Android Devices");
         }
         
-        AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
-        
-        // Capture mode submenu
-        HMENU modeMenu = CreatePopupMenu();
-        AppendMenuW(modeMenu, MF_STRING, ID_TRAY_MODE_PRIMARY, L"Primary Monitor (Mirror)");
-        AppendMenuW(modeMenu, MF_STRING, ID_TRAY_MODE_SECOND, L"Second Monitor (Extended)");
-        AppendMenuW(modeMenu, MF_STRING, ID_TRAY_MODE_CUSTOM, L"Custom Region...");
-        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modeMenu), L"Capture Mode");
+        // Show discovered devices
+        if (!discoveredDevices_.empty()) {
+            AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+            for (size_t i = 0; i < discoveredDevices_.size(); ++i) {
+                std::wstring deviceText = L"Connect to: " + 
+                    std::wstring(discoveredDevices_[i].deviceName.begin(), discoveredDevices_[i].deviceName.end());
+                AppendMenuW(menu, MF_STRING, ID_TRAY_CONNECT_BASE + i, deviceText.c_str());
+            }
+        }
         
         AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(menu, MF_STRING, ID_TRAY_EXIT, L"Exit TabDisplay");
@@ -138,13 +123,16 @@ private:
         statusText += "✅ Windows App SDK: Detected\n";
         statusText += "✅ Tray Icon: Active (Win32)\n";
         statusText += "✅ Core functionality: Available\n";
+        statusText += "⚠️  WinUI 3 UI: Partial (using Win32 fallback)\n\n";
         
-        if (g_connected) {
-            statusText += "✅ Connection: Connected to " + g_connectedDevice + "\n";
-            statusText += "✅ Screen Capture: Active\n";
+        if (discoveredDevices_.empty()) {
+            statusText += "📱 Android Devices: None found\n";
+            statusText += "   Right-click and select 'Find Android Devices'\n";
         } else {
-            statusText += "⚠️  Connection: Disconnected\n";
-            statusText += "⚠️  Screen Capture: Inactive\n";
+            statusText += "📱 Android Devices Found: " + std::to_string(discoveredDevices_.size()) + "\n";
+            for (const auto& device : discoveredDevices_) {
+                statusText += "   • " + device.deviceName + " (" + device.ipAddress + ")\n";
+            }
         }
         
         statusText += "\nRight-click tray icon for menu.\n";
@@ -153,174 +141,155 @@ private:
         MessageBoxA(nullptr, statusText.c_str(), "TabDisplay Status", MB_OK | MB_ICONINFORMATION);
     }
 
-    void ConnectToAndroid() {
-        spdlog::info("Attempting to connect to Android device...");
-        
-        if (!g_discovery) {
-            MessageBoxA(nullptr, "Device discovery not initialized", "Connection Error", MB_OK | MB_ICONERROR);
+    void StartDiscovery() {
+        if (discoveryInProgress_) {
+            spdlog::warn("Discovery already in progress");
             return;
         }
         
-        auto device = g_discovery->getFirstAndroidDevice();
-        if (!device) {
-            MessageBoxA(nullptr, 
-                "No Android device found.\n\n"
-                "Please ensure your Android device is:\n"
-                "1. Connected via USB cable\n"
-                "2. USB tethering is enabled\n"
-                "3. TabDisplay Android app is running\n"
-                "4. Allow USB debugging if prompted",
-                "No Device Found", MB_OK | MB_ICONWARNING);
-            return;
-        }
+        spdlog::info("Starting Android device discovery");
+        discoveryInProgress_ = true;
+        UpdateTrayTooltip("TabDisplay - Discovering devices...");
         
-        spdlog::info("Found Android device: {} at {}", device->deviceName, device->ipAddress);
-        
-        // Initialize UDP sender with device IP
-        if (!g_sender->initialize(device->ipAddress, 5004)) {
-            MessageBoxA(nullptr, "Failed to initialize network connection to Android device", 
-                       "Connection Error", MB_OK | MB_ICONERROR);
-            return;
-        }
-        
-        // Configure encoder settings based on capture mode
-        EncoderAMF::EncoderSettings encSettings{};
-        auto captureRegion = g_capture->getCaptureRegion();
-        encSettings.width = captureRegion.width;
-        encSettings.height = captureRegion.height;
-        encSettings.frameRate = 60;
-        encSettings.bitrate = 30; // 30 Mbps
-        encSettings.lowLatency = true;
-        encSettings.useBFrames = false;
-        
-        spdlog::info("Configuring encoder for {}x{} resolution", encSettings.width, encSettings.height);
-        
-        if (!g_encoder->configure(encSettings)) {
-            MessageBoxA(nullptr, "Failed to configure video encoder", "Encoder Error", MB_OK | MB_ICONERROR);
-            return;
-        }
-        
-        // Set capture profile based on encoder settings
-        CaptureDXGI::Profile profile = CaptureDXGI::Profile::FullHD_60Hz;
-        if (encSettings.width == 1752 && encSettings.height == 2800) {
-            profile = CaptureDXGI::Profile::Tablet_60Hz;
-        }
-        
-        if (!g_capture->setProfile(profile)) {
-            MessageBoxA(nullptr, "Failed to set capture profile", "Capture Error", MB_OK | MB_ICONERROR);
-            return;
-        }
-        
-        // Start screen capture
-        if (!g_capture->startCapture()) {
-            MessageBoxA(nullptr, "Failed to start screen capture", "Capture Error", MB_OK | MB_ICONERROR);
-            return;
-        }
-        
-        // Update connection state
-        g_connected = true;
-        g_connectedDevice = device->deviceName + " (" + device->ipAddress + ")";
-        
-        // Update tray icon tooltip
-        strcpy_s(m_nid.szTip, sizeof(m_nid.szTip), ("TabDisplay - Connected to " + device->deviceName).c_str());
-        Shell_NotifyIcon(NIM_MODIFY, &m_nid);
-        
-        spdlog::info("Successfully connected to Android device: {}", g_connectedDevice);
-        
-        MessageBoxA(nullptr, 
-            ("Successfully connected to " + device->deviceName + "\n\n"
-             "Your Android device should now display your screen.\n"
-             "Touch the screen to control your PC.").c_str(),
-            "Connected", MB_OK | MB_ICONINFORMATION);
-    }
-
-    void DisconnectFromAndroid() {
-        spdlog::info("Disconnecting from Android device...");
-        
-        // Stop screen capture
-        if (g_capture) {
-            g_capture->stopCapture();
-        }
-        
-        // Update connection state
-        g_connected = false;
-        g_connectedDevice.clear();
-        
-        // Update tray icon tooltip
-        strcpy_s(m_nid.szTip, sizeof(m_nid.szTip), "TabDisplay - Disconnected");
-        Shell_NotifyIcon(NIM_MODIFY, &m_nid);
-        
-        spdlog::info("Disconnected from Android device");
-    }
-
-    void SetCaptureMode(CaptureDXGI::CaptureMode mode) {
-        if (!g_capture) {
-            MessageBoxA(nullptr, "Capture system not initialized", "Error", MB_OK | MB_ICONERROR);
-            return;
-        }
-        
-        switch (mode) {
-        case CaptureDXGI::CaptureMode::PrimaryMonitor:
-            g_capture->setCaptureMode(mode);
-            spdlog::info("Capture mode set to Primary Monitor (Mirror)");
-            MessageBoxA(nullptr, "Capture mode set to Primary Monitor (Mirror)\n\n"
-                       "Your tablet will now mirror your primary monitor.", 
-                       "Capture Mode Changed", MB_OK | MB_ICONINFORMATION);
-            break;
-            
-        case CaptureDXGI::CaptureMode::SecondMonitor:
-            g_capture->setSecondMonitorRegion();
-            spdlog::info("Capture mode set to Second Monitor (Extended)");
-            {
-                auto region = g_capture->getCaptureRegion();
-                char msg[512];
-                sprintf_s(msg, sizeof(msg), 
-                    "Capture mode set to Second Monitor (Extended)\n\n"
-                    "Virtual second monitor region: %dx%d at (%d, %d)\n\n"
-                    "Move windows to the right of your primary monitor to see them on the tablet.",
-                    region.width, region.height, region.x, region.y);
-                MessageBoxA(nullptr, msg, "Capture Mode Changed", MB_OK | MB_ICONINFORMATION);
+        // Start discovery in a separate thread
+        discoveryThread_ = std::make_unique<std::thread>([this]() {
+            try {
+                // Clear previous results
+                discoveredDevices_.clear();
+                
+                // USB device discovery
+                spdlog::info("Searching for USB tethered Android devices");
+                auto usbDevices = deviceDiscovery_->findAndroidDevices();
+                
+                // Network discovery via UDP broadcast
+                spdlog::info("Broadcasting discovery packets");
+                if (udpSender_) {
+                    udpSender_->sendDiscoveryPacket();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // Wait for responses
+                    
+                    // Get discovered devices from UDP sender
+                    auto networkDevices = udpSender_->getDiscoveredDevices();
+                    spdlog::info("Found {} devices via network discovery", networkDevices.size());
+                    
+                    // Convert network devices to UsbDeviceInfo format
+                    for (const auto& deviceResponse : networkDevices) {
+                        UsbDeviceInfo networkDevice;
+                        // Parse "HELLO:DeviceName" format
+                        if (deviceResponse.find("HELLO:") == 0) {
+                            networkDevice.deviceName = deviceResponse.substr(6);
+                            networkDevice.ipAddress = "192.168.42.129"; // Default Android USB IP
+                            networkDevice.interfaceName = "Network Discovery";
+                            discoveredDevices_.push_back(networkDevice);
+                        }
+                    }
+                }
+                
+                // Add USB devices
+                discoveredDevices_.insert(discoveredDevices_.end(), usbDevices.begin(), usbDevices.end());
+                
+                spdlog::info("Discovery complete. Found {} total devices", discoveredDevices_.size());
+                
+                // Notify main thread
+                PostMessage(m_hwnd, WM_DISCOVERY_COMPLETE, 0, 0);
+                
+            } catch (const std::exception& e) {
+                spdlog::error("Discovery failed: {}", e.what());
+                PostMessage(m_hwnd, WM_DISCOVERY_COMPLETE, 0, 0);
             }
-            break;
-            
-        case CaptureDXGI::CaptureMode::CustomRegion:
-            // This will be handled by ConfigureCustomRegion()
-            break;
+        });
+    }
+
+    void OnDiscoveryComplete() {
+        discoveryInProgress_ = false;
+        if (discoveryThread_ && discoveryThread_->joinable()) {
+            discoveryThread_->join();
+        }
+        
+        std::string tooltip = "TabDisplay - Found " + std::to_string(discoveredDevices_.size()) + " device(s)";
+        UpdateTrayTooltip(tooltip);
+        
+        if (discoveredDevices_.empty()) {
+            MessageBoxA(nullptr, 
+                "No Android devices found.\n\n"
+                "Make sure:\n"
+                "• Android device is connected via USB\n"
+                "• USB tethering is enabled\n"
+                "• TabDisplay app is running on Android\n"
+                "• Discovery service is listening on port 45678",
+                "Discovery Complete", MB_OK | MB_ICONWARNING);
+        } else {
+            spdlog::info("Discovery completed successfully with {} devices", discoveredDevices_.size());
         }
     }
 
-    void ConfigureCustomRegion() {
-        // Simple dialog to configure custom region - for now just use a predefined region
-        // In a full implementation, this could show a dialog to let user select region
-        
-        if (!g_capture) {
-            MessageBoxA(nullptr, "Capture system not initialized", "Error", MB_OK | MB_ICONERROR);
+    void ConnectToDevice(int deviceIndex) {
+        if (deviceIndex < 0 || deviceIndex >= static_cast<int>(discoveredDevices_.size())) {
+            spdlog::error("Invalid device index: {}", deviceIndex);
             return;
         }
         
-        // For now, set a custom region in the center of the screen
-        g_capture->setCustomRegion(480, 270, 960, 540);  // Center quarter of 1920x1080
+        const auto& device = discoveredDevices_[deviceIndex];
+        spdlog::info("Attempting to connect to device: {} ({})", device.deviceName, device.ipAddress);
         
-        auto region = g_capture->getCaptureRegion();
-        char msg[512];
-        sprintf_s(msg, sizeof(msg), 
-            "Custom capture region configured:\n\n"
-            "Size: %dx%d\n"
-            "Position: (%d, %d)\n\n"
-            "The tablet will now show this specific area of your desktop.",
-            region.width, region.height, region.x, region.y);
-        MessageBoxA(nullptr, msg, "Custom Region Set", MB_OK | MB_ICONINFORMATION);
+        // Test connectivity first
+        if (!deviceDiscovery_->testConnectivity(device.ipAddress)) {
+            std::string errorMsg = "Failed to connect to " + device.deviceName + "\n\n";
+            errorMsg += "IP: " + device.ipAddress + "\n";
+            errorMsg += "Make sure the Android app is running and listening on port 5004.";
+            
+            MessageBoxA(nullptr, errorMsg.c_str(), "Connection Failed", MB_OK | MB_ICONERROR);
+            spdlog::error("Connectivity test failed for device: {}", device.ipAddress);
+            return;
+        }
         
-        spdlog::info("Custom capture region set: {}x{} at ({}, {})", 
-                     region.width, region.height, region.x, region.y);
+        // Initialize UDP sender for this device
+        if (!udpSender_->initialize(device.ipAddress, 5004)) {
+            MessageBoxA(nullptr, "Failed to initialize UDP connection", "Connection Failed", MB_OK | MB_ICONERROR);
+            spdlog::error("Failed to initialize UDP sender for device: {}", device.ipAddress);
+            return;
+        }
+        
+        // Start receiving touch events
+        if (!udpSender_->startReceiving()) {
+            MessageBoxA(nullptr, "Failed to start receiving touch events", "Connection Failed", MB_OK | MB_ICONERROR);
+            spdlog::error("Failed to start receiving for device: {}", device.ipAddress);
+            return;
+        }
+        
+        spdlog::info("Successfully connected to device: {}", device.deviceName);
+        UpdateTrayTooltip("TabDisplay - Connected to " + device.deviceName);
+        
+        std::string successMsg = "Successfully connected to " + device.deviceName + "!\n\n";
+        successMsg += "Your Android device should now be receiving video.";
+        MessageBoxA(nullptr, successMsg.c_str(), "Connection Successful", MB_OK | MB_ICONINFORMATION);
+    }
+
+    void StopAllOperations() {
+        spdlog::info("Stopping all operations");
+        
+        // Stop discovery if running
+        discoveryInProgress_ = false;
+        if (discoveryThread_ && discoveryThread_->joinable()) {
+            discoveryThread_->join();
+        }
+        
+        // Stop UDP operations
+        if (udpSender_) {
+            udpSender_->stopReceiving();
+        }
+    }
+
+    void UpdateTrayTooltip(const std::string& tooltip) {
+        strncpy_s(m_nid.szTip, sizeof(m_nid.szTip), tooltip.c_str(), _TRUNCATE);
+        Shell_NotifyIcon(NIM_MODIFY, &m_nid);
     }
 
 public:
     bool Initialize() {
-        // Initialize core components first
-        if (!InitializeComponents()) {
-            return false;
-        }
+        // Initialize discovery components
+        deviceDiscovery_ = std::make_unique<UsbDeviceDiscovery>();
+        udpSender_ = std::make_unique<UdpSender>();
+        discoveryInProgress_ = false;
         
         // Register window class
         WNDCLASSW wc = {};
@@ -351,7 +320,7 @@ public:
         m_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
         m_nid.uCallbackMessage = WM_TRAYICON;
         m_nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-        strcpy_s(m_nid.szTip, sizeof(m_nid.szTip), "TabDisplay - Ready to connect");
+        strcpy_s(m_nid.szTip, sizeof(m_nid.szTip), "TabDisplay - Second Monitor App");
 
         if (!Shell_NotifyIcon(NIM_ADD, &m_nid)) {
             spdlog::error("Failed to add tray icon");
@@ -359,8 +328,14 @@ public:
         }
 
         spdlog::info("Tray icon created successfully using Win32 API");
+        spdlog::info("Discovery components initialized");
         m_running = true;
         return true;
+    }
+
+    void RemoveTrayIcon() {
+        Shell_NotifyIcon(NIM_DELETE, &m_nid);
+        spdlog::info("Tray icon removed");
     }
 
     int Run() {
@@ -371,18 +346,12 @@ public:
         spdlog::info("TabDisplay tray application started (Win32 mode)");
         spdlog::info("Right-click tray icon for menu, double-click for status");
 
-        // Show initial connection prompt
-        int result = MessageBoxA(nullptr,
-            "TabDisplay is ready!\n\n"
-            "Connect your Android device via USB cable and enable USB tethering,\n"
-            "then right-click the tray icon and select 'Connect to Android'.\n\n"
-            "Would you like to try connecting now?",
-            "TabDisplay Ready",
-            MB_YESNO | MB_ICONQUESTION);
-            
-        if (result == IDYES) {
-            ConnectToAndroid();
-        }
+        // Show initial status
+        ShowStatusDialog();
+
+        // Automatically start discovery after showing status
+        spdlog::info("Starting automatic Android device discovery");
+        PostMessage(m_hwnd, WM_COMMAND, ID_TRAY_DISCOVER, 0);
 
         // Message loop
         MSG msg;
@@ -393,88 +362,6 @@ public:
 
         spdlog::info("TabDisplay tray application shutting down");
         return 0;
-    }
-
-private:
-    bool InitializeComponents() {
-        try {
-            spdlog::info("Initializing TabDisplay components...");
-            
-            // Initialize device discovery
-            g_discovery = std::make_unique<UsbDeviceDiscovery>();
-            
-            // Initialize screen capture
-            g_capture = std::make_unique<CaptureDXGI>();
-            if (!g_capture->initialize()) {
-                spdlog::error("Failed to initialize screen capture");
-                return false;
-            }
-            
-            // Initialize hardware encoder
-            g_encoder = std::make_unique<EncoderAMF>();
-            if (!g_encoder->initialize(g_capture->getDevice())) {
-                spdlog::error("Failed to initialize AMF encoder");
-                spdlog::warn("Continuing without hardware encoder (software fallback will be used)");
-                g_encoder.reset(); // Clear the failed encoder
-            } else {
-                // Link capture to encoder only if encoder initialized successfully
-                g_capture->setEncoder(g_encoder.get());
-            }
-            
-            // Initialize UDP sender
-            g_sender = std::make_unique<UdpSender>();
-            if (!g_sender->startReceiving()) {
-                spdlog::error("Failed to start UDP receiver");
-                return false;
-            }
-            
-            // Initialize input injector
-            g_injector = std::make_unique<InputInjector>();
-            if (!g_injector->initialize()) {
-                spdlog::warn("Failed to initialize input injector, touch input will not work");
-                // Continue anyway
-            }
-            
-            // Set up callbacks
-            if (g_encoder) {
-                g_encoder->setFrameCallback([](const EncoderAMF::EncodedFrame& frame) {
-                    if (g_sender && g_connected) {
-                        g_sender->sendFrame(frame.data, frame.isKeyFrame);
-                    }
-                });
-            }
-            
-            g_sender->setTouchEventCallback([](const UdpSender::TouchEvent& event) {
-                if (g_injector) {
-                    InputInjector::InputType type;
-                    switch (event.type) {
-                        case UdpSender::TouchEvent::Type::DOWN:
-                            type = InputInjector::InputType::TOUCH_DOWN;
-                            break;
-                        case UdpSender::TouchEvent::Type::MOVE:
-                            type = InputInjector::InputType::TOUCH_MOVE;
-                            break;
-                        case UdpSender::TouchEvent::Type::UP:
-                            type = InputInjector::InputType::TOUCH_UP;
-                            break;
-                    }
-                    
-                    g_injector->injectTouchEvent(event.x, event.y, event.pointerId, type);
-                }
-            });
-            
-            spdlog::info("All components initialized successfully");
-            return true;
-        }
-        catch (const std::exception& e) {
-            spdlog::error("Exception during component initialization: {}", e.what());
-            return false;
-        }
-    }
-
-    void RemoveTrayIcon() {
-        Shell_NotifyIcon(NIM_DELETE, &m_nid);
-        spdlog::info("Tray icon removed");
     }
 };
 

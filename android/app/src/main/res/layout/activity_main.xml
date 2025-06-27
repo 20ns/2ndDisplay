@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <SurfaceView
+        android:id="@+id/videoSurface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Status overlay for debugging -->
+    <LinearLayout
+        android:id="@+id/statusOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="#80000000"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="visible">
+        
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TabDisplay - Initializing..."
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+            
+        <TextView
+            android:id="@+id/debugText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Waiting for connection..."
+            android:textColor="#CCCCCC"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+            
+    </LinearLayout>
+
+</FrameLayout>

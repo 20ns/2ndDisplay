@@ -7,6 +7,7 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
+#include <thread>
 #include <wrl/client.h>
 
 namespace TabDisplay {
@@ -28,6 +29,19 @@ public:
         FullHD_60Hz,         // 1080p 60Hz
         Tablet_60Hz,         // 1752�2800 60Hz
         Tablet_120Hz         // 1752�2800 120Hz
+    };
+
+    // Capture modes
+    enum class CaptureMode {
+        PrimaryMonitor,     // Original behavior - capture primary monitor
+        SecondMonitor,      // Capture virtual second monitor area  
+        CustomRegion        // Capture specific desktop region
+    };
+
+    // Capture region structure
+    struct CaptureRegion {
+        int x, y;           // Desktop coordinates
+        int width, height;  // Capture dimensions
     };
 
     CaptureDXGI();
@@ -65,7 +79,7 @@ public:
     void setCaptureMode(CaptureMode mode);
     void setCustomRegion(int x, int y, int width, int height);
     void setSecondMonitorRegion(); // Auto-configure for virtual second monitor
-    
+
     // Get current capture settings
     CaptureMode getCaptureMode() const;
     CaptureRegion getCaptureRegion() const;
@@ -108,19 +122,6 @@ private:
 
     // Pointer to the encoder instance (non-owning)
     EncoderAMF* encoder_{};
-
-    // Second monitor capture region
-    struct CaptureRegion {
-        int x, y;           // Desktop coordinates
-        int width, height;  // Capture dimensions
-    };
-
-    // Capture modes
-    enum class CaptureMode {
-        PrimaryMonitor,     // Original behavior - capture primary monitor
-        SecondMonitor,      // Capture virtual second monitor area  
-        CustomRegion        // Capture specific desktop region
-    };
 
     // Current capture settings
     CaptureMode captureMode_;

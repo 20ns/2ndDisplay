@@ -130,9 +130,9 @@ set(TABDISPLAY_SOURCES
     src/CaptureDXGI.cpp
     src/EncoderAMF.cpp
     src/UdpSender.cpp
+    src/UsbDeviceDiscovery.cpp
     src/InputInjector.cpp
     src/Settings.cpp
-    src/UsbDeviceDiscovery.cpp
 )
 
 # Add the appropriate TrayApp implementation based on WinUI 3 availability

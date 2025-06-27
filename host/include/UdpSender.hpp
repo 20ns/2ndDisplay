@@ -61,6 +61,9 @@ public:
     // Get current statistics
     double getCurrentBandwidthMbps() const;
     double getCurrentLatencyMs() const;
+    
+    // Get the port this sender is listening on for touch events
+    uint16_t getListeningPort() const;
 
 private:
     // Receiving thread function
@@ -84,12 +87,13 @@ private:
     std::mutex sendMutex_;
 
     // Touch event callback
-    TouchEventCallback touchEventCallback_;
-
-    // Statistics
+    TouchEventCallback touchEventCallback_;    // Statistics
     std::atomic<double> currentBandwidthMbps_;
     std::atomic<double> currentLatencyMs_;
-    
+
+    // Listening port for touch events
+    std::atomic<uint16_t> listeningPort_;
+
     // Discovered devices
     mutable std::mutex discoveredDevicesMutex_;
     std::vector<std::string> discoveredDevices_;

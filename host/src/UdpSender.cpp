@@ -16,6 +16,7 @@ UdpSender::UdpSender()
     , running_(false)
     , currentBandwidthMbps_(0.0)
     , currentLatencyMs_(0.0)
+    , listeningPort_(0)
 {
     // Initialize Winsock
     WSADATA wsaData;
@@ -164,7 +165,7 @@ bool UdpSender::sendKeepAlive(uint32_t width, uint32_t height, uint32_t fps, uin
     std::lock_guard<std::mutex> lock(sendMutex_);
     
     // Create control packet
-    auto packet = createControlPacket(nextSequenceId_++, width, height, fps, bitrate);
+    auto packet = createControlPacket(nextSequenceId_++, width, height, fps, bitrate, listeningPort_);
     
     // Send packet
     int bytesSent = sendto(socket_, 
@@ -179,8 +180,8 @@ bool UdpSender::sendKeepAlive(uint32_t width, uint32_t height, uint32_t fps, uin
         return false;
     }
     
-    spdlog::debug("Sent keepalive packet: {}x{} at {}fps, {}Mbps", 
-                 width, height, fps, bitrate);
+    spdlog::debug("Sent keepalive packet: {}x{} at {}fps, {}Mbps, touchPort: {}", 
+                 width, height, fps, bitrate, listeningPort_.load());
     return true;
 }
 
@@ -206,6 +207,16 @@ bool UdpSender::startReceiving()
     if (bind(socket_, reinterpret_cast<const sockaddr*>(&localAddr), sizeof(localAddr)) == SOCKET_ERROR) {
         spdlog::error("Failed to bind socket: {}", WSAGetLastError());
         return false;
+    }
+    
+    // Get the actual port that was assigned
+    sockaddr_in assignedAddr;
+    int addrLen = sizeof(assignedAddr);
+    if (getsockname(socket_, reinterpret_cast<sockaddr*>(&assignedAddr), &addrLen) == 0) {
+        listeningPort_ = ntohs(assignedAddr.sin_port);
+        spdlog::info("UDP receiver listening on port: {}", listeningPort_.load());
+    } else {
+        spdlog::warn("Failed to get assigned port: {}", WSAGetLastError());
     }
     
     // Start receive thread
@@ -282,6 +293,11 @@ double UdpSender::getCurrentBandwidthMbps() const
 double UdpSender::getCurrentLatencyMs() const
 {
     return currentLatencyMs_;
+}
+
+uint16_t UdpSender::getListeningPort() const
+{
+    return listeningPort_;
 }
 
 void UdpSender::receiveThread()

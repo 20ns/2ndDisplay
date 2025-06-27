@@ -198,7 +198,7 @@ struct TrayAppWindow : implements<TrayAppWindow, IInspectable>
         }
         
         // Initialize sender with device IP
-        if (!g_sender->initialize(ipAddress, 54321)) {
+        if (!g_sender->initialize(ipAddress, 5004)) {
             statusText.Text(winrt::hstring(L"Error: Failed to connect to device"));
             return;
         }

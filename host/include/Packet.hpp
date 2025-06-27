@@ -87,6 +87,7 @@ struct ControlPacket {
     uint32_t height;
     uint32_t fps;
     uint32_t bitrate;
+    uint32_t touchPort;  // Port where host is listening for touch events
 
     // Serialize to JSON
     nlohmann::json toJson() const {
@@ -95,7 +96,8 @@ struct ControlPacket {
             {"width", width},
             {"height", height},
             {"fps", fps},
-            {"bitrate", bitrate}
+            {"bitrate", bitrate},
+            {"touchPort", touchPort}
         };
     }
 
@@ -107,6 +109,11 @@ struct ControlPacket {
         packet.height = j.at("height").get<uint32_t>();
         packet.fps = j.at("fps").get<uint32_t>();
         packet.bitrate = j.at("bitrate").get<uint32_t>();
+        if (j.contains("touchPort")) {
+            packet.touchPort = j.at("touchPort").get<uint32_t>();
+        } else {
+            packet.touchPort = 0;  // Default/unknown
+        }
         return packet;
     }
 };
@@ -180,13 +187,14 @@ std::vector<std::vector<uint8_t>> createPackets(const std::vector<uint8_t>& fram
 
 // Create a keepalive control packet
 std::vector<uint8_t> createControlPacket(uint16_t sequenceId, uint32_t width, uint32_t height, 
-                                        uint32_t fps, uint32_t bitrate) {
+                                        uint32_t fps, uint32_t bitrate, uint32_t touchPort) {
     ControlPacket control;
     control.type = "keepalive";
     control.width = width;
     control.height = height;
     control.fps = fps;
     control.bitrate = bitrate;
+    control.touchPort = touchPort;
     
     // Create JSON payload
     std::string jsonStr = control.toJson().dump();

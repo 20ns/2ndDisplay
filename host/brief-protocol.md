@@ -5,7 +5,7 @@ This document describes the protocol used between the Windows host and Android c
 ## Transport Layer
 
 - **Protocol**: UDP over USB Tethering (RNDIS)
-- **Default Port**: 54321
+- **Default Port**: 5004
 - **Maximum Packet Size**: 1350 bytes payload + 12 bytes header
 
 ## Packet Format
@@ -89,6 +89,6 @@ These packets are injected by the host as absolute mouse positions.
 
 | Profile         | Resolution  | Frame Rate | Bitrate      |
 |-----------------|-------------|------------|--------------|
-| FullHD_60Hz     | 1920×1080   | 60 Hz      | 20-30 Mbps   |
-| Tablet_60Hz     | 1752×2800   | 60 Hz      | 30-40 Mbps   |
-| Tablet_120Hz    | 1752×2800   | 120 Hz     | 40 Mbps      |
+| FullHD_60Hz     | 1920ï¿½1080   | 60 Hz      | 20-30 Mbps   |
+| Tablet_60Hz     | 1752ï¿½2800   | 60 Hz      | 30-40 Mbps   |
+| Tablet_120Hz    | 1752ï¿½2800   | 120 Hz     | 40 Mbps      |

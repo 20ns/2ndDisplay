@@ -132,6 +132,7 @@ set(TABDISPLAY_SOURCES
     src/UdpSender.cpp
     src/InputInjector.cpp
     src/Settings.cpp
+    src/UsbDeviceDiscovery.cpp
 )
 
 # Add the appropriate TrayApp implementation based on WinUI 3 availability

@@ -282,7 +282,7 @@ std::string UsbDeviceDiscovery::getDeviceName(const std::string& interfaceName) 
 
 std::string UsbDeviceDiscovery::findGatewayIP(const std::string& localIP) {
     // For USB tethering, try to find the gateway IP
-    // This is typically x.x.x.1 or the first IP in the subnet
+    // Android devices can use various IP patterns
     
     size_t lastDot = localIP.find_last_of('.');
     if (lastDot == std::string::npos) {
@@ -291,18 +291,26 @@ std::string UsbDeviceDiscovery::findGatewayIP(const std::string& localIP) {
     
     std::string subnet = localIP.substr(0, lastDot);
     
-    // Try common gateway patterns
+    // Try common gateway patterns - expanded to cover more Android devices
     std::vector<std::string> gatewayPatterns = {
-        subnet + ".1",
-        subnet + ".129"  // Android sometimes uses .129 as gateway
+        subnet + ".1",      // Most common
+        subnet + ".129",    // Common alternative
+        subnet + ".161",    // Samsung devices often use this
+        subnet + ".254",    // Some devices use the last address
+        subnet + ".100",    // Another common pattern
     };
     
+    spdlog::info("Looking for Android device on subnet: {}", subnet);
+    
     for (const auto& gateway : gatewayPatterns) {
-        if (testConnectivity(gateway, 1000)) {
+        spdlog::info("Testing connectivity to potential Android IP: {}", gateway);
+        if (testConnectivity(gateway, 2000)) {
+            spdlog::info("Successfully connected to Android device at: {}", gateway);
             return gateway;
         }
     }
     
+    spdlog::warn("No Android device found on subnet: {}", subnet);
     return "";
 }
 

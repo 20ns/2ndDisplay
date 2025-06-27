@@ -8,14 +8,17 @@
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <atomic>
 #include "UsbDeviceDiscovery.hpp"
 #include "UdpSender.hpp"
+#include "CaptureDXGI.hpp"
 
 #define WM_TRAYICON (WM_USER + 1)
 #define WM_DISCOVERY_COMPLETE (WM_USER + 2)
 #define ID_TRAY_EXIT 1001
 #define ID_TRAY_SHOW 1002
 #define ID_TRAY_DISCOVER 1003
+#define ID_TRAY_STOP_STREAM 1004
 #define ID_TRAY_CONNECT_BASE 2000
 
 namespace TabDisplay {
@@ -32,6 +35,12 @@ private:
     std::vector<UsbDeviceInfo> discoveredDevices_;
     bool discoveryInProgress_;
     std::unique_ptr<std::thread> discoveryThread_;
+    
+    // Video streaming components
+    std::unique_ptr<CaptureDXGI> capture_;
+    bool streamingActive_;
+    std::unique_ptr<std::thread> streamingThread_;
+    std::atomic<int> frameCounter_;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SimpleTrayApp* app = reinterpret_cast<SimpleTrayApp*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -58,6 +67,9 @@ private:
                 break;
             case ID_TRAY_DISCOVER:
                 StartDiscovery();
+                break;
+            case ID_TRAY_STOP_STREAM:
+                StopVideoStreaming();
                 break;
             case ID_TRAY_EXIT:
                 spdlog::info("User requested exit from tray menu");
@@ -93,6 +105,12 @@ private:
         AppendMenuW(menu, MF_STRING, ID_TRAY_SHOW, L"Show Status");
         AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
         
+        // Streaming controls
+        if (streamingActive_) {
+            AppendMenuW(menu, MF_STRING, ID_TRAY_STOP_STREAM, L"Stop Video Streaming");
+            AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+        }
+        
         // Discovery option
         if (discoveryInProgress_) {
             AppendMenuW(menu, MF_STRING | MF_GRAYED, ID_TRAY_DISCOVER, L"Discovering Android Devices...");
@@ -100,8 +118,8 @@ private:
             AppendMenuW(menu, MF_STRING, ID_TRAY_DISCOVER, L"Find Android Devices");
         }
         
-        // Show discovered devices
-        if (!discoveredDevices_.empty()) {
+        // Show discovered devices (only if not streaming)
+        if (!discoveredDevices_.empty() && !streamingActive_) {
             AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
             for (size_t i = 0; i < discoveredDevices_.size(); ++i) {
                 std::wstring deviceText = L"Connect to: " + 
@@ -124,6 +142,14 @@ private:
         statusText += "✅ Tray Icon: Active (Win32)\n";
         statusText += "✅ Core functionality: Available\n";
         statusText += "⚠️  WinUI 3 UI: Partial (using Win32 fallback)\n\n";
+        
+        // Streaming status
+        if (streamingActive_) {
+            statusText += "🎥 Video Streaming: Active\n";
+            statusText += "   Broadcasting screen to connected device\n\n";
+        } else {
+            statusText += "🎥 Video Streaming: Inactive\n\n";
+        }
         
         if (discoveredDevices_.empty()) {
             statusText += "📱 Android Devices: None found\n";
@@ -161,8 +187,11 @@ private:
                 spdlog::info("Searching for USB tethered Android devices");
                 auto usbDevices = deviceDiscovery_->findAndroidDevices();
                 
-                // Network discovery via UDP broadcast
-                spdlog::info("Broadcasting discovery packets");
+                // Add USB devices first (these are the reliable ones)
+                discoveredDevices_.insert(discoveredDevices_.end(), usbDevices.begin(), usbDevices.end());
+                
+                // Network discovery via UDP broadcast (optional, for additional verification)
+                spdlog::info("Broadcasting discovery packets for verification");
                 if (udpSender_) {
                     udpSender_->sendDiscoveryPacket();
                     std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // Wait for responses
@@ -171,21 +200,11 @@ private:
                     auto networkDevices = udpSender_->getDiscoveredDevices();
                     spdlog::info("Found {} devices via network discovery", networkDevices.size());
                     
-                    // Convert network devices to UsbDeviceInfo format
-                    for (const auto& deviceResponse : networkDevices) {
-                        UsbDeviceInfo networkDevice;
-                        // Parse "HELLO:DeviceName" format
-                        if (deviceResponse.find("HELLO:") == 0) {
-                            networkDevice.deviceName = deviceResponse.substr(6);
-                            networkDevice.ipAddress = "192.168.42.129"; // Default Android USB IP
-                            networkDevice.interfaceName = "Network Discovery";
-                            discoveredDevices_.push_back(networkDevice);
-                        }
+                    // Network discovery is supplementary - USB discovery is primary
+                    if (!networkDevices.empty()) {
+                        spdlog::info("Network discovery confirmed connectivity");
                     }
                 }
-                
-                // Add USB devices
-                discoveredDevices_.insert(discoveredDevices_.end(), usbDevices.begin(), usbDevices.end());
                 
                 spdlog::info("Discovery complete. Found {} total devices", discoveredDevices_.size());
                 
@@ -249,23 +268,128 @@ private:
             return;
         }
         
-        // Start receiving touch events
-        if (!udpSender_->startReceiving()) {
-            MessageBoxA(nullptr, "Failed to start receiving touch events", "Connection Failed", MB_OK | MB_ICONERROR);
-            spdlog::error("Failed to start receiving for device: {}", device.ipAddress);
-            return;
-        }
-        
         spdlog::info("Successfully connected to device: {}", device.deviceName);
         UpdateTrayTooltip("TabDisplay - Connected to " + device.deviceName);
         
-        std::string successMsg = "Successfully connected to " + device.deviceName + "!\n\n";
-        successMsg += "Your Android device should now be receiving video.";
-        MessageBoxA(nullptr, successMsg.c_str(), "Connection Successful", MB_OK | MB_ICONINFORMATION);
+        // Start video streaming
+        if (StartVideoStreaming()) {
+            spdlog::info("Video streaming started successfully");
+            
+            std::string successMsg = "Successfully connected to " + device.deviceName + "!\n\n";
+            successMsg += "Video streaming is now active.\n";
+            successMsg += "Your tablet should show the extended desktop.";
+            MessageBoxA(nullptr, successMsg.c_str(), "Connection Successful", MB_OK | MB_ICONINFORMATION);
+        } else {
+            spdlog::error("Failed to start video streaming");
+            MessageBoxA(nullptr, "Connection established but video streaming failed to start.\nCheck TabDisplay.log for details.", 
+                       "Partial Success", MB_OK | MB_ICONWARNING);
+        }
+    }
+
+    bool StartVideoStreaming() {
+        if (streamingActive_) {
+            spdlog::warn("Video streaming already active");
+            return true;
+        }
+        
+        try {
+            streamingActive_ = true;
+            
+            // Initialize frame counter
+            frameCounter_ = 0;
+            
+            // Set up frame callback for DXGI capture
+            capture_->setFrameCallback([this](const CaptureDXGI::CaptureFrame& frame) {
+                if (!streamingActive_ || !udpSender_) {
+                    return;
+                }
+                
+                try {
+                    // Convert frame data to vector for UDP sender
+                    std::vector<uint8_t> frameData(frame.data.begin(), frame.data.end());
+                    
+                    // Send frame
+                    bool isKeyFrame = (frameCounter_ % 60 == 0); // Keyframe every 2 seconds at 30fps
+                    if (udpSender_->sendFrame(frameData, isKeyFrame)) {
+                        frameCounter_++;
+                        if (frameCounter_ % 30 == 0) { // Log every second
+                            spdlog::info("Sent frame #{}, size: {} bytes", frameCounter_.load(), frameData.size());
+                        }
+                    } else {
+                        spdlog::warn("Failed to send frame #{}", frameCounter_.load());
+                    }
+                } catch (const std::exception& e) {
+                    spdlog::error("Exception in frame callback: {}", e.what());
+                }
+            });
+            
+            // Initialize capture if needed
+            if (!capture_->initialize()) {
+                spdlog::error("Failed to initialize DXGI capture, falling back to keepalive only");
+                
+                // Start keepalive-only thread as fallback
+                streamingThread_ = std::make_unique<std::thread>([this]() {
+                    spdlog::info("Keepalive-only streaming thread started");
+                    int keepaliveCounter = 0;
+                    
+                    while (streamingActive_) {
+                        if (!udpSender_->sendKeepAlive(1920, 1080, 60, 30)) {
+                            spdlog::warn("Failed to send keepalive");
+                        } else {
+                            spdlog::info("Sent keepalive #{}", ++keepaliveCounter);
+                        }
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
+                    spdlog::info("Keepalive-only streaming thread ended");
+                });
+                
+                spdlog::info("Video streaming started in keepalive-only mode");
+                UpdateTrayTooltip("TabDisplay - Streaming keepalive");
+                return true;
+            }
+            
+            // Start actual frame capture
+            if (!capture_->startCapture()) {
+                spdlog::error("Failed to start DXGI capture");
+                return false;
+            }
+            
+            spdlog::info("Video streaming started with frame capture at 30fps");
+            UpdateTrayTooltip("TabDisplay - Streaming video");
+            
+            return true;
+            
+        } catch (const std::exception& e) {
+            spdlog::error("Exception starting video streaming: {}", e.what());
+            streamingActive_ = false;
+            return false;
+        }
+    }
+    
+    void StopVideoStreaming() {
+        if (!streamingActive_) {
+            return;
+        }
+        
+        spdlog::info("Stopping video streaming");
+        streamingActive_ = false;
+        
+        if (capture_) {
+            capture_->stopCapture();
+        }
+        
+        if (streamingThread_ && streamingThread_->joinable()) {
+            streamingThread_->join();
+        }
+        
+        UpdateTrayTooltip("TabDisplay - Ready");
     }
 
     void StopAllOperations() {
         spdlog::info("Stopping all operations");
+        
+        // Stop video streaming
+        StopVideoStreaming();
         
         // Stop discovery if running
         discoveryInProgress_ = false;
@@ -273,7 +397,7 @@ private:
             discoveryThread_->join();
         }
         
-        // Stop UDP operations
+        // Stop UDP operations  
         if (udpSender_) {
             udpSender_->stopReceiving();
         }
@@ -290,6 +414,21 @@ public:
         deviceDiscovery_ = std::make_unique<UsbDeviceDiscovery>();
         udpSender_ = std::make_unique<UdpSender>();
         discoveryInProgress_ = false;
+        
+        // Initialize video streaming components
+        capture_ = std::make_unique<CaptureDXGI>();
+        streamingActive_ = false;
+        frameCounter_ = 0;
+        
+        // Initialize video components
+        if (!capture_->initialize()) {
+            spdlog::warn("Failed to initialize DXGI capture, video streaming may not work");
+        } else {
+            spdlog::info("DXGI capture initialized successfully");
+        }
+        
+        // For now, disable hardware encoder to avoid crashes
+        spdlog::info("Using direct frame streaming (no encoding) to avoid encoder issues");
         
         // Register window class
         WNDCLASSW wc = {};

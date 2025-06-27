@@ -5,7 +5,12 @@
       "Bash(find:*)",
       "Bash(\"$env:ProgramFiles\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe\" --build build/vs2022-debug --config Debug)",
       "Bash(\"/mnt/c/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe\" --build build/vs2022-debug --config Debug)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(taskkill:*)",
+      "Bash(grep:*)",
+      "Bash(cmake:*)",
+      "Bash(/usr/bin/cmake --build build/vs2022-debug --config Debug)",
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" --help)"
     ],
     "deny": []
   }

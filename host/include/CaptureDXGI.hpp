@@ -61,6 +61,15 @@ public:
     // NEW: provide encoder pointer so CaptureDXGI can push frames directly
     void setEncoder(EncoderAMF* encoder);
 
+    // Set capture mode and region
+    void setCaptureMode(CaptureMode mode);
+    void setCustomRegion(int x, int y, int width, int height);
+    void setSecondMonitorRegion(); // Auto-configure for virtual second monitor
+    
+    // Get current capture settings
+    CaptureMode getCaptureMode() const;
+    CaptureRegion getCaptureRegion() const;
+
 private:
     // Resolution profile settings
     struct ProfileSettings {
@@ -99,6 +108,28 @@ private:
 
     // Pointer to the encoder instance (non-owning)
     EncoderAMF* encoder_{};
+
+    // Second monitor capture region
+    struct CaptureRegion {
+        int x, y;           // Desktop coordinates
+        int width, height;  // Capture dimensions
+    };
+
+    // Capture modes
+    enum class CaptureMode {
+        PrimaryMonitor,     // Original behavior - capture primary monitor
+        SecondMonitor,      // Capture virtual second monitor area  
+        CustomRegion        // Capture specific desktop region
+    };
+
+    // Current capture settings
+    CaptureMode captureMode_;
+    CaptureRegion captureRegion_;
+    
+    // Helper methods for region capture
+    bool cropFrame(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& sourceTexture,
+                   Microsoft::WRL::ComPtr<ID3D11Texture2D>& croppedTexture,
+                   const CaptureRegion& region);
 };
 
 } // namespace TabDisplay

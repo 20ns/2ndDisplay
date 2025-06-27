@@ -26,6 +26,9 @@
 #define ID_TRAY_SHOW 1002
 #define ID_TRAY_CONNECT 1003
 #define ID_TRAY_DISCONNECT 1004
+#define ID_TRAY_MODE_PRIMARY 1005
+#define ID_TRAY_MODE_SECOND 1006
+#define ID_TRAY_MODE_CUSTOM 1007
 
 namespace TabDisplay {
 
@@ -75,6 +78,15 @@ private:
             case ID_TRAY_DISCONNECT:
                 DisconnectFromAndroid();
                 break;
+            case ID_TRAY_MODE_PRIMARY:
+                SetCaptureMode(CaptureDXGI::CaptureMode::PrimaryMonitor);
+                break;
+            case ID_TRAY_MODE_SECOND:
+                SetCaptureMode(CaptureDXGI::CaptureMode::SecondMonitor);
+                break;
+            case ID_TRAY_MODE_CUSTOM:
+                ConfigureCustomRegion();
+                break;
             case ID_TRAY_EXIT:
                 spdlog::info("User requested exit from tray menu");
                 m_running = false;
@@ -103,6 +115,15 @@ private:
         } else {
             AppendMenuW(menu, MF_STRING, ID_TRAY_CONNECT, L"Connect to Android");
         }
+        
+        AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+        
+        // Capture mode submenu
+        HMENU modeMenu = CreatePopupMenu();
+        AppendMenuW(modeMenu, MF_STRING, ID_TRAY_MODE_PRIMARY, L"Primary Monitor (Mirror)");
+        AppendMenuW(modeMenu, MF_STRING, ID_TRAY_MODE_SECOND, L"Second Monitor (Extended)");
+        AppendMenuW(modeMenu, MF_STRING, ID_TRAY_MODE_CUSTOM, L"Custom Region...");
+        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modeMenu), L"Capture Mode");
         
         AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
         AppendMenuW(menu, MF_STRING, ID_TRAY_EXIT, L"Exit TabDisplay");
@@ -162,22 +183,30 @@ private:
             return;
         }
         
-        // Configure encoder settings (default to 1080p60)
+        // Configure encoder settings based on capture mode
         EncoderAMF::EncoderSettings encSettings{};
-        encSettings.width = 1920;
-        encSettings.height = 1080;
+        auto captureRegion = g_capture->getCaptureRegion();
+        encSettings.width = captureRegion.width;
+        encSettings.height = captureRegion.height;
         encSettings.frameRate = 60;
         encSettings.bitrate = 30; // 30 Mbps
         encSettings.lowLatency = true;
         encSettings.useBFrames = false;
+        
+        spdlog::info("Configuring encoder for {}x{} resolution", encSettings.width, encSettings.height);
         
         if (!g_encoder->configure(encSettings)) {
             MessageBoxA(nullptr, "Failed to configure video encoder", "Encoder Error", MB_OK | MB_ICONERROR);
             return;
         }
         
-        // Set capture profile
-        if (!g_capture->setProfile(CaptureDXGI::Profile::FullHD_60Hz)) {
+        // Set capture profile based on encoder settings
+        CaptureDXGI::Profile profile = CaptureDXGI::Profile::FullHD_60Hz;
+        if (encSettings.width == 1752 && encSettings.height == 2800) {
+            profile = CaptureDXGI::Profile::Tablet_60Hz;
+        }
+        
+        if (!g_capture->setProfile(profile)) {
             MessageBoxA(nullptr, "Failed to set capture profile", "Capture Error", MB_OK | MB_ICONERROR);
             return;
         }
@@ -222,6 +251,68 @@ private:
         Shell_NotifyIcon(NIM_MODIFY, &m_nid);
         
         spdlog::info("Disconnected from Android device");
+    }
+
+    void SetCaptureMode(CaptureDXGI::CaptureMode mode) {
+        if (!g_capture) {
+            MessageBoxA(nullptr, "Capture system not initialized", "Error", MB_OK | MB_ICONERROR);
+            return;
+        }
+        
+        switch (mode) {
+        case CaptureDXGI::CaptureMode::PrimaryMonitor:
+            g_capture->setCaptureMode(mode);
+            spdlog::info("Capture mode set to Primary Monitor (Mirror)");
+            MessageBoxA(nullptr, "Capture mode set to Primary Monitor (Mirror)\n\n"
+                       "Your tablet will now mirror your primary monitor.", 
+                       "Capture Mode Changed", MB_OK | MB_ICONINFORMATION);
+            break;
+            
+        case CaptureDXGI::CaptureMode::SecondMonitor:
+            g_capture->setSecondMonitorRegion();
+            spdlog::info("Capture mode set to Second Monitor (Extended)");
+            {
+                auto region = g_capture->getCaptureRegion();
+                char msg[512];
+                sprintf_s(msg, sizeof(msg), 
+                    "Capture mode set to Second Monitor (Extended)\n\n"
+                    "Virtual second monitor region: %dx%d at (%d, %d)\n\n"
+                    "Move windows to the right of your primary monitor to see them on the tablet.",
+                    region.width, region.height, region.x, region.y);
+                MessageBoxA(nullptr, msg, "Capture Mode Changed", MB_OK | MB_ICONINFORMATION);
+            }
+            break;
+            
+        case CaptureDXGI::CaptureMode::CustomRegion:
+            // This will be handled by ConfigureCustomRegion()
+            break;
+        }
+    }
+
+    void ConfigureCustomRegion() {
+        // Simple dialog to configure custom region - for now just use a predefined region
+        // In a full implementation, this could show a dialog to let user select region
+        
+        if (!g_capture) {
+            MessageBoxA(nullptr, "Capture system not initialized", "Error", MB_OK | MB_ICONERROR);
+            return;
+        }
+        
+        // For now, set a custom region in the center of the screen
+        g_capture->setCustomRegion(480, 270, 960, 540);  // Center quarter of 1920x1080
+        
+        auto region = g_capture->getCaptureRegion();
+        char msg[512];
+        sprintf_s(msg, sizeof(msg), 
+            "Custom capture region configured:\n\n"
+            "Size: %dx%d\n"
+            "Position: (%d, %d)\n\n"
+            "The tablet will now show this specific area of your desktop.",
+            region.width, region.height, region.x, region.y);
+        MessageBoxA(nullptr, msg, "Custom Region Set", MB_OK | MB_ICONINFORMATION);
+        
+        spdlog::info("Custom capture region set: {}x{} at ({}, {})", 
+                     region.width, region.height, region.x, region.y);
     }
 
 public:

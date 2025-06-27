@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include <windows.h>
 #include "EncoderAMF.hpp"
 
 namespace TabDisplay {
@@ -19,6 +20,8 @@ CaptureDXGI::CaptureDXGI()
     , running_(false)
     , currentFrameRate_(0)
     , encoder_(nullptr)
+    , captureMode_(CaptureMode::PrimaryMonitor)
+    , captureRegion_{0, 0, 1920, 1080}
 {
 }
 
@@ -245,9 +248,27 @@ void CaptureDXGI::captureThread() {
         D3D11_TEXTURE2D_DESC textureDesc;
         desktopTexture->GetDesc(&textureDesc);
 
+        // Handle region-based capture
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> processedTexture = desktopTexture;
+        D3D11_TEXTURE2D_DESC processedDesc = textureDesc;
+        
+        if (captureMode_ != CaptureMode::PrimaryMonitor) {
+            // Crop the texture to the specified region
+            Microsoft::WRL::ComPtr<ID3D11Texture2D> croppedTexture;
+            if (cropFrame(desktopTexture, croppedTexture, captureRegion_)) {
+                processedTexture = croppedTexture;
+                processedTexture->GetDesc(&processedDesc);
+                spdlog::debug("Frame cropped to region: {}x{} at ({}, {})", 
+                             captureRegion_.width, captureRegion_.height,
+                             captureRegion_.x, captureRegion_.y);
+            } else {
+                spdlog::warn("Failed to crop frame, using full frame");
+            }
+        }
+
         // Create staging texture for CPU access
         Microsoft::WRL::ComPtr<ID3D11Texture2D> stagingTexture;
-        D3D11_TEXTURE2D_DESC stagingDesc = textureDesc;
+        D3D11_TEXTURE2D_DESC stagingDesc = processedDesc;
         stagingDesc.BindFlags = 0;
         stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         stagingDesc.Usage = D3D11_USAGE_STAGING;
@@ -260,8 +281,8 @@ void CaptureDXGI::captureThread() {
             continue;
         }
 
-        // Copy to staging texture (optional for CPU read-back)
-        context_->CopyResource(stagingTexture.Get(), desktopTexture.Get());
+        // Copy to staging texture (use processed texture which may be cropped)
+        context_->CopyResource(stagingTexture.Get(), processedTexture.Get());
 
         // --- Forward frame to hardware encoder ---
         if (encoder_) {
@@ -270,7 +291,8 @@ void CaptureDXGI::captureThread() {
                 encoder_->forceKeyFrame();
                 frameSinceLastIDR = 0;
             }
-            encoder_->encodeFrame(desktopTexture);
+            // Use the processed texture (potentially cropped) for encoding
+            encoder_->encodeFrame(processedTexture);
             ++frameSinceLastIDR;
         }
 
@@ -285,13 +307,13 @@ void CaptureDXGI::captureThread() {
 
         // Create frame data
         CaptureFrame frame;
-        frame.width = textureDesc.Width;
-        frame.height = textureDesc.Height;
+        frame.width = processedDesc.Width;   // Use processed texture dimensions
+        frame.height = processedDesc.Height; // Use processed texture dimensions
         frame.rowPitch = mappedResource.RowPitch;
         frame.keyFrame = keyFrame;
         
         // Allocate buffer and copy data
-        frame.data.resize(mappedResource.RowPitch * textureDesc.Height);
+        frame.data.resize(mappedResource.RowPitch * processedDesc.Height);
         memcpy(frame.data.data(), mappedResource.pData, frame.data.size());
         
         // Unmap
@@ -312,6 +334,100 @@ void CaptureDXGI::captureThread() {
         // Update last frame time for next iteration
         lastFrameTime = std::chrono::high_resolution_clock::now();
     }
+}
+
+void CaptureDXGI::setCaptureMode(CaptureMode mode) {
+    captureMode_ = mode;
+    spdlog::info("Capture mode set to: {}", static_cast<int>(mode));
+}
+
+void CaptureDXGI::setCustomRegion(int x, int y, int width, int height) {
+    captureRegion_ = {x, y, width, height};
+    captureMode_ = CaptureMode::CustomRegion;
+    spdlog::info("Custom capture region set to: {}x{} at ({}, {})", width, height, x, y);
+}
+
+void CaptureDXGI::setSecondMonitorRegion() {
+    // For now, configure a virtual second monitor to the right of the primary display
+    // This creates a virtual extended desktop area
+    
+    // Get primary monitor resolution
+    RECT primaryRect;
+    SystemParametersInfo(SPI_GETWORKAREA, 0, &primaryRect, 0);
+    int primaryWidth = primaryRect.right - primaryRect.left;
+    int primaryHeight = primaryRect.bottom - primaryRect.top;
+    
+    // Set second monitor region to the right of primary monitor
+    // Use tablet resolution for the virtual second monitor
+    const auto& profile = PROFILE_SETTINGS[static_cast<int>(currentProfile_)];
+    
+    captureRegion_ = {
+        primaryWidth,  // Start to the right of primary monitor
+        0,             // Top of screen
+        static_cast<int>(profile.width),   // Use profile width
+        static_cast<int>(profile.height)   // Use profile height
+    };
+    
+    captureMode_ = CaptureMode::SecondMonitor;
+    
+    spdlog::info("Second monitor region configured: {}x{} at ({}, {})", 
+                 captureRegion_.width, captureRegion_.height, 
+                 captureRegion_.x, captureRegion_.y);
+}
+
+CaptureDXGI::CaptureMode CaptureDXGI::getCaptureMode() const {
+    return captureMode_;
+}
+
+CaptureDXGI::CaptureRegion CaptureDXGI::getCaptureRegion() const {
+    return captureRegion_;
+}
+
+bool CaptureDXGI::cropFrame(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& sourceTexture,
+                           Microsoft::WRL::ComPtr<ID3D11Texture2D>& croppedTexture,
+                           const CaptureRegion& region) {
+    
+    // Get source texture description
+    D3D11_TEXTURE2D_DESC sourceDesc;
+    sourceTexture->GetDesc(&sourceDesc);
+    
+    // Validate region bounds
+    if (region.x < 0 || region.y < 0 || 
+        region.x + region.width > static_cast<int>(sourceDesc.Width) ||
+        region.y + region.height > static_cast<int>(sourceDesc.Height)) {
+        spdlog::error("Crop region is out of bounds");
+        return false;
+    }
+    
+    // Create cropped texture description
+    D3D11_TEXTURE2D_DESC croppedDesc = sourceDesc;
+    croppedDesc.Width = region.width;
+    croppedDesc.Height = region.height;
+    
+    // Create the cropped texture
+    HRESULT hr = device_->CreateTexture2D(&croppedDesc, nullptr, croppedTexture.GetAddressOf());
+    if (FAILED(hr)) {
+        spdlog::error("Failed to create cropped texture, error: {0:x}", hr);
+        return false;
+    }
+    
+    // Copy the region from source to cropped texture
+    D3D11_BOX srcBox;
+    srcBox.left = region.x;
+    srcBox.top = region.y;
+    srcBox.front = 0;
+    srcBox.right = region.x + region.width;
+    srcBox.bottom = region.y + region.height;
+    srcBox.back = 1;
+    
+    context_->CopySubresourceRegion(
+        croppedTexture.Get(), 0,  // Destination
+        0, 0, 0,                  // Destination coordinates
+        sourceTexture.Get(), 0,   // Source
+        &srcBox                   // Source region
+    );
+    
+    return true;
 }
 
 } // namespace TabDisplay

@@ -10,7 +10,8 @@
       "Bash(grep:*)",
       "Bash(cmake:*)",
       "Bash(/usr/bin/cmake --build build/vs2022-debug --config Debug)",
-      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" --help)"
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" --help)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

@@ -12,6 +12,7 @@
 #include "UsbDeviceDiscovery.hpp"
 #include "UdpSender.hpp"
 #include "CaptureDXGI.hpp"
+#include "EncoderAMF.hpp"
 
 #define WM_TRAYICON (WM_USER + 1)
 #define WM_DISCOVERY_COMPLETE (WM_USER + 2)
@@ -38,9 +39,11 @@ private:
     
     // Video streaming components
     std::unique_ptr<CaptureDXGI> capture_;
+    std::unique_ptr<EncoderAMF> encoder_;
     bool streamingActive_;
     std::unique_ptr<std::thread> streamingThread_;
     std::atomic<int> frameCounter_;
+    bool useEncoder_;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SimpleTrayApp* app = reinterpret_cast<SimpleTrayApp*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -298,30 +301,60 @@ private:
             // Initialize frame counter
             frameCounter_ = 0;
             
-            // Set up frame callback for DXGI capture
-            capture_->setFrameCallback([this](const CaptureDXGI::CaptureFrame& frame) {
-                if (!streamingActive_ || !udpSender_) {
-                    return;
-                }
-                
-                try {
-                    // Convert frame data to vector for UDP sender
-                    std::vector<uint8_t> frameData(frame.data.begin(), frame.data.end());
-                    
-                    // Send frame
-                    bool isKeyFrame = (frameCounter_ % 60 == 0); // Keyframe every 2 seconds at 30fps
-                    if (udpSender_->sendFrame(frameData, isKeyFrame)) {
-                        frameCounter_++;
-                        if (frameCounter_ % 30 == 0) { // Log every second
-                            spdlog::info("Sent frame #{}, size: {} bytes", frameCounter_.load(), frameData.size());
-                        }
-                    } else {
-                        spdlog::warn("Failed to send frame #{}", frameCounter_.load());
+            if (useEncoder_) {
+                // Set up encoder callback for H.264 encoded frames
+                encoder_->setFrameCallback([this](const EncoderAMF::EncodedFrame& encodedFrame) {
+                    if (!streamingActive_ || !udpSender_) {
+                        return;
                     }
-                } catch (const std::exception& e) {
-                    spdlog::error("Exception in frame callback: {}", e.what());
-                }
-            });
+                    
+                    try {
+                        // Send encoded H.264 frame
+                        if (udpSender_->sendFrame(encodedFrame.data, encodedFrame.isKeyFrame)) {
+                            frameCounter_++;
+                            if (frameCounter_ % 30 == 0) { // Log every second
+                                spdlog::info("Sent H.264 frame #{}, size: {} bytes, keyframe: {}", 
+                                           frameCounter_.load(), encodedFrame.data.size(), encodedFrame.isKeyFrame);
+                            }
+                        } else {
+                            spdlog::warn("Failed to send H.264 frame #{}", frameCounter_.load());
+                        }
+                    } catch (const std::exception& e) {
+                        spdlog::error("Exception in encoder callback: {}", e.what());
+                    }
+                });
+                
+                // Connect capture to encoder
+                capture_->setEncoder(encoder_.get());
+                spdlog::info("Using H.264 hardware encoding for video streaming");
+                
+            } else {
+                // Fallback: Set up frame callback for raw frames  
+                capture_->setFrameCallback([this](const CaptureDXGI::CaptureFrame& frame) {
+                    if (!streamingActive_ || !udpSender_) {
+                        return;
+                    }
+                    
+                    try {
+                        // Convert frame data to vector for UDP sender
+                        std::vector<uint8_t> frameData(frame.data.begin(), frame.data.end());
+                        
+                        // Send frame
+                        bool isKeyFrame = (frameCounter_ % 60 == 0); // Keyframe every 2 seconds at 30fps
+                        if (udpSender_->sendFrame(frameData, isKeyFrame)) {
+                            frameCounter_++;
+                            if (frameCounter_ % 30 == 0) { // Log every second
+                                spdlog::info("Sent raw frame #{}, size: {} bytes", frameCounter_.load(), frameData.size());
+                            }
+                        } else {
+                            spdlog::warn("Failed to send raw frame #{}", frameCounter_.load());
+                        }
+                    } catch (const std::exception& e) {
+                        spdlog::error("Exception in frame callback: {}", e.what());
+                    }
+                });
+                spdlog::warn("Using raw frame streaming (Android may not display correctly)");
+            }
             
             // Initialize capture if needed
             if (!capture_->initialize()) {
@@ -417,18 +450,42 @@ public:
         
         // Initialize video streaming components
         capture_ = std::make_unique<CaptureDXGI>();
+        encoder_ = std::make_unique<EncoderAMF>();
         streamingActive_ = false;
         frameCounter_ = 0;
+        useEncoder_ = false;
         
         // Initialize video components
         if (!capture_->initialize()) {
             spdlog::warn("Failed to initialize DXGI capture, video streaming may not work");
         } else {
             spdlog::info("DXGI capture initialized successfully");
+            
+            // Try to initialize AMF encoder safely
+            try {
+                if (encoder_->initialize(capture_->getDevice())) {
+                    // Configure encoder for H.264 streaming
+                    EncoderAMF::EncoderSettings settings;
+                    settings.width = 1920;
+                    settings.height = 1080;
+                    settings.frameRate = 30;
+                    settings.bitrate = 8; // 8 Mbps
+                    settings.lowLatency = true;
+                    settings.useBFrames = false;
+                    
+                    if (encoder_->configure(settings)) {
+                        useEncoder_ = true;
+                        spdlog::info("AMF H.264 encoder initialized successfully (8 Mbps, 30fps)");
+                    } else {
+                        spdlog::warn("Failed to configure AMF encoder, falling back to raw frames");
+                    }
+                } else {
+                    spdlog::warn("Failed to initialize AMF encoder, falling back to raw frames");
+                }
+            } catch (const std::exception& e) {
+                spdlog::error("Exception initializing encoder: {}, falling back to raw frames", e.what());
+            }
         }
-        
-        // For now, disable hardware encoder to avoid crashes
-        spdlog::info("Using direct frame streaming (no encoding) to avoid encoder issues");
         
         // Register window class
         WNDCLASSW wc = {};

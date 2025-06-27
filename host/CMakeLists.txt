@@ -49,6 +49,17 @@ CPMAddPackage(
     OPTIONS "JSON_BuildTests OFF"
 )
 
+# ---- openh264 (Software H.264 encoder) -----------------------------------
+CPMAddPackage(
+    NAME openh264
+    GITHUB_REPOSITORY cisco/openh264
+    VERSION 2.4.1
+    OPTIONS 
+        "USE_ASM ON"
+        "ENABLE_UTILS OFF"
+        "ENABLE_TESTS OFF"
+)
+
 # =============================================================================
 # Windows App SDK / WinUI 3 Detection
 # =============================================================================
@@ -217,6 +228,7 @@ set(TABDISPLAY_LIBRARIES
     spdlog::spdlog
     nlohmann_json::nlohmann_json
     fec
+    openh264
     d3d11
     dxgi
     ws2_32

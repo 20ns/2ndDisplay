@@ -30,7 +30,7 @@ build/
 out/
 bin/
 obj/
-
+CLAUDE.md
 # Android specific build directories (AGGRESSIVE)
 android/
 !android/gradle.properties

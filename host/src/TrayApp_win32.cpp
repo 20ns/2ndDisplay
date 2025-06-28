@@ -13,6 +13,7 @@
 #include "UdpSender.hpp"
 #include "CaptureDXGI.hpp"
 #include "EncoderAMF.hpp"
+// #include "EncoderSoftware.hpp"  // Temporarily disabled
 
 #define WM_TRAYICON (WM_USER + 1)
 #define WM_DISCOVERY_COMPLETE (WM_USER + 2)
@@ -40,10 +41,12 @@ private:
     // Video streaming components
     std::unique_ptr<CaptureDXGI> capture_;
     std::unique_ptr<EncoderAMF> encoder_;
+    // std::unique_ptr<EncoderSoftware> softwareEncoder_;  // Temporarily disabled
     bool streamingActive_;
     std::unique_ptr<std::thread> streamingThread_;
     std::atomic<int> frameCounter_;
     bool useEncoder_;
+    bool useHardwareEncoder_;
 
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SimpleTrayApp* app = reinterpret_cast<SimpleTrayApp*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -193,19 +196,29 @@ private:
                 // Add USB devices first (these are the reliable ones)
                 discoveredDevices_.insert(discoveredDevices_.end(), usbDevices.begin(), usbDevices.end());
                 
-                // Network discovery via UDP broadcast (optional, for additional verification)
-                spdlog::info("Broadcasting discovery packets for verification");
+                // Network discovery via UDP broadcast (capture WiFi IPs for video streaming)
+                spdlog::info("Starting UDP receiver for network discovery");
                 if (udpSender_) {
-                    udpSender_->sendDiscoveryPacket();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // Wait for responses
-                    
-                    // Get discovered devices from UDP sender
-                    auto networkDevices = udpSender_->getDiscoveredDevices();
-                    spdlog::info("Found {} devices via network discovery", networkDevices.size());
-                    
-                    // Network discovery is supplementary - USB discovery is primary
-                    if (!networkDevices.empty()) {
-                        spdlog::info("Network discovery confirmed connectivity");
+                    // Start UDP receiver to capture discovery responses
+                    if (!udpSender_->startReceiving()) {
+                        spdlog::warn("Failed to start UDP receiver for discovery");
+                    } else {
+                        spdlog::info("UDP receiver started, broadcasting discovery packets");
+                        udpSender_->sendDiscoveryPacket();
+                        std::this_thread::sleep_for(std::chrono::milliseconds(3000)); // Wait longer for responses
+                        
+                        // Get discovered devices from UDP sender
+                        auto networkDevices = udpSender_->getDiscoveredDevices();
+                        spdlog::info("Found {} devices via network discovery", networkDevices.size());
+                        
+                        if (!networkDevices.empty()) {
+                            for (const auto& device : networkDevices) {
+                                spdlog::info("Network discovered device: {}", device);
+                            }
+                        }
+                        
+                        // Stop UDP receiver after discovery
+                        udpSender_->stopReceiving();
                     }
                 }
                 
@@ -251,23 +264,45 @@ private:
         }
         
         const auto& device = discoveredDevices_[deviceIndex];
-        spdlog::info("Attempting to connect to device: {} ({})", device.deviceName, device.ipAddress);
         
-        // Test connectivity first
-        if (!deviceDiscovery_->testConnectivity(device.ipAddress)) {
+        // Get WiFi IPs from UDP discovery (these are the correct IPs for video streaming)
+        auto networkDevices = udpSender_->getDiscoveredDevices();
+        std::string videoTargetIP;
+        
+        if (!networkDevices.empty()) {
+            // Extract IP from the first network discovered device (format: "192.168.1.166 (Galaxy_Tab_S10+)")
+            std::string networkDevice = networkDevices[0];
+            size_t spacePos = networkDevice.find(' ');
+            if (spacePos != std::string::npos) {
+                videoTargetIP = networkDevice.substr(0, spacePos);
+            } else {
+                videoTargetIP = networkDevice; // Fallback if no space found
+            }
+            spdlog::info("Using WiFi IP from network discovery: {}", videoTargetIP);
+        } else {
+            // Fallback to USB IP if no network discovery results
+            videoTargetIP = device.ipAddress;
+            spdlog::warn("No WiFi IP found, falling back to USB IP: {}", videoTargetIP);
+        }
+        
+        spdlog::info("Attempting to connect to device: {} (USB: {}, Video target: {})", 
+                    device.deviceName, device.ipAddress, videoTargetIP);
+        
+        // Test connectivity to the video target IP
+        if (!deviceDiscovery_->testConnectivity(videoTargetIP)) {
             std::string errorMsg = "Failed to connect to " + device.deviceName + "\n\n";
-            errorMsg += "IP: " + device.ipAddress + "\n";
+            errorMsg += "Video Target IP: " + videoTargetIP + "\n";
             errorMsg += "Make sure the Android app is running and listening on port 5004.";
             
             MessageBoxA(nullptr, errorMsg.c_str(), "Connection Failed", MB_OK | MB_ICONERROR);
-            spdlog::error("Connectivity test failed for device: {}", device.ipAddress);
+            spdlog::error("Connectivity test failed for video target: {}", videoTargetIP);
             return;
         }
         
-        // Initialize UDP sender for this device
-        if (!udpSender_->initialize(device.ipAddress, 5004)) {
+        // Initialize UDP sender for video target IP
+        if (!udpSender_->initialize(videoTargetIP, 5004)) {
             MessageBoxA(nullptr, "Failed to initialize UDP connection", "Connection Failed", MB_OK | MB_ICONERROR);
-            spdlog::error("Failed to initialize UDP sender for device: {}", device.ipAddress);
+            spdlog::error("Failed to initialize UDP sender for video target: {}", videoTargetIP);
             return;
         }
         
@@ -302,31 +337,35 @@ private:
             frameCounter_ = 0;
             
             if (useEncoder_) {
-                // Set up encoder callback for H.264 encoded frames
-                encoder_->setFrameCallback([this](const EncoderAMF::EncodedFrame& encodedFrame) {
-                    if (!streamingActive_ || !udpSender_) {
-                        return;
-                    }
-                    
-                    try {
-                        // Send encoded H.264 frame
-                        if (udpSender_->sendFrame(encodedFrame.data, encodedFrame.isKeyFrame)) {
-                            frameCounter_++;
-                            if (frameCounter_ % 30 == 0) { // Log every second
-                                spdlog::info("Sent H.264 frame #{}, size: {} bytes, keyframe: {}", 
-                                           frameCounter_.load(), encodedFrame.data.size(), encodedFrame.isKeyFrame);
-                            }
-                        } else {
-                            spdlog::warn("Failed to send H.264 frame #{}", frameCounter_.load());
+                if (useHardwareEncoder_) {
+                    // Set up AMF hardware encoder callback for H.264 encoded frames
+                    encoder_->setFrameCallback([this](const EncoderAMF::EncodedFrame& encodedFrame) {
+                        if (!streamingActive_ || !udpSender_) {
+                            return;
                         }
-                    } catch (const std::exception& e) {
-                        spdlog::error("Exception in encoder callback: {}", e.what());
-                    }
-                });
-                
-                // Connect capture to encoder
-                capture_->setEncoder(encoder_.get());
-                spdlog::info("Using H.264 hardware encoding for video streaming");
+                        
+                        try {
+                            // Send encoded H.264 frame
+                            if (udpSender_->sendFrame(encodedFrame.data, encodedFrame.isKeyFrame)) {
+                                frameCounter_++;
+                                if (frameCounter_ % 30 == 0) { // Log every second
+                                    spdlog::info("Sent H.264 frame #{}, size: {} bytes, keyframe: {}", 
+                                               frameCounter_.load(), encodedFrame.data.size(), encodedFrame.isKeyFrame);
+                                }
+                            } else {
+                                spdlog::warn("Failed to send H.264 frame #{}", frameCounter_.load());
+                            }
+                        } catch (const std::exception& e) {
+                            spdlog::error("Exception in AMF encoder callback: {}", e.what());
+                        }
+                    });
+                    
+                    // Connect capture to hardware encoder
+                    capture_->setEncoder(encoder_.get());
+                    spdlog::info("Using H.264 hardware encoding for video streaming");
+                } else {
+                    spdlog::error("Software encoder path reached but software encoder is disabled!");
+                }
                 
             } else {
                 // Fallback: Set up frame callback for raw frames  
@@ -355,6 +394,10 @@ private:
                 });
                 spdlog::warn("Using raw frame streaming (Android may not display correctly)");
             }
+            
+            // Configure capture for extended desktop mode (virtual second monitor)
+            capture_->setSecondMonitorRegion();
+            spdlog::info("Configured capture for extended desktop mode (virtual second monitor)");
             
             // Initialize capture if needed
             if (!capture_->initialize()) {
@@ -451,9 +494,11 @@ public:
         // Initialize video streaming components
         capture_ = std::make_unique<CaptureDXGI>();
         encoder_ = std::make_unique<EncoderAMF>();
+        // softwareEncoder_ = std::make_unique<EncoderSoftware>();  // Temporarily disabled
         streamingActive_ = false;
         frameCounter_ = 0;
         useEncoder_ = false;
+        useHardwareEncoder_ = false;
         
         // Initialize video components
         if (!capture_->initialize()) {
@@ -461,13 +506,13 @@ public:
         } else {
             spdlog::info("DXGI capture initialized successfully");
             
-            // Try to initialize AMF encoder safely
+            // Try to initialize AMF encoder first
             try {
                 if (encoder_->initialize(capture_->getDevice())) {
                     // Configure encoder for H.264 streaming
                     EncoderAMF::EncoderSettings settings;
-                    settings.width = 1920;
-                    settings.height = 1080;
+                    settings.width = 960;  // Reduce to 960x540 for testing
+                    settings.height = 540;
                     settings.frameRate = 30;
                     settings.bitrate = 8; // 8 Mbps
                     settings.lowLatency = true;
@@ -475,15 +520,22 @@ public:
                     
                     if (encoder_->configure(settings)) {
                         useEncoder_ = true;
-                        spdlog::info("AMF H.264 encoder initialized successfully (8 Mbps, 30fps)");
+                        useHardwareEncoder_ = true;
+                        spdlog::info("AMF H.264 hardware encoder initialized successfully (8 Mbps, 30fps)");
                     } else {
-                        spdlog::warn("Failed to configure AMF encoder, falling back to raw frames");
+                        spdlog::warn("Failed to configure AMF encoder, trying software encoder...");
                     }
                 } else {
-                    spdlog::warn("Failed to initialize AMF encoder, falling back to raw frames");
+                    spdlog::warn("Failed to initialize AMF encoder, trying software encoder...");
                 }
             } catch (const std::exception& e) {
-                spdlog::error("Exception initializing encoder: {}, falling back to raw frames", e.what());
+                spdlog::error("Exception initializing AMF encoder: {}, trying software encoder...", e.what());
+            }
+            
+            // Try software encoder if AMF fails - TEMPORARILY DISABLED
+            if (!useEncoder_) {
+                spdlog::warn("Hardware encoder failed, software encoder disabled - will use raw frames as fallback");
+                // TODO: Implement proper software encoder when OpenH264 is configured
             }
         }
         

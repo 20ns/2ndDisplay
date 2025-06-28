@@ -127,20 +127,30 @@ bool EncoderAMF::createAMFContext(const Microsoft::WRL::ComPtr<ID3D11Device>& de
     AMF_RESULT result = g_AMFFactory->CreateContext(&ctx);
     amfContext_ = ctx;
     if (result != AMF_OK) {
-        spdlog::error("Failed to create AMF context, error: {}", result);
+        spdlog::error("Failed to create AMF context, error: {} ({})", result, getAMFErrorString(result));
         return false;
     }
+
+    spdlog::info("AMF context created, initializing with D3D11 device...");
 
     // Initialize with D3D11 device
     result = reinterpret_cast<amf::AMFContext*>(amfContext_)->InitDX11(device.Get());
     if (result != AMF_OK) {
-        spdlog::error("Failed to initialize AMF context with D3D11, error: {}", result);
-        reinterpret_cast<amf::AMFContext*>(amfContext_)->Terminate();
-        amfContext_ = nullptr;
-        return false;
+        spdlog::error("Failed to initialize AMF context with D3D11, error: {} ({})", result, getAMFErrorString(result));
+        
+        // Try alternative initialization methods
+        spdlog::info("Trying CPU-based AMF initialization as fallback...");
+        result = reinterpret_cast<amf::AMFContext*>(amfContext_)->InitDX11(nullptr);
+        if (result != AMF_OK) {
+            spdlog::error("CPU fallback also failed, error: {} ({})", result, getAMFErrorString(result));
+            reinterpret_cast<amf::AMFContext*>(amfContext_)->Terminate();
+            amfContext_ = nullptr;
+            return false;
+        }
+        spdlog::warn("Using CPU-based AMF initialization (performance may be reduced)");
     }
 
-    spdlog::info("AMF context created successfully");
+    spdlog::info("AMF context created and initialized successfully");
     return true;
 }
 
@@ -408,6 +418,29 @@ uint32_t EncoderAMF::getCurrentBitrate() const
 void EncoderAMF::forceKeyFrame()
 {
     forceIDR_ = true;
+}
+
+const char* EncoderAMF::getAMFErrorString(AMF_RESULT result)
+{
+    // Use simple if-else chain to avoid issues with AMF constants in stubs
+    if (result == 0) return "OK";
+    if (result == 1) return "General failure";
+    if (result == 2) return "Unexpected error";
+    if (result == 3) return "Access denied";
+    if (result == 4) return "Invalid argument";
+    if (result == 5) return "Out of range";
+    if (result == 6) return "Out of memory";
+    if (result == 7) return "Invalid pointer";
+    if (result == 8) return "No interface";
+    if (result == 9) return "Not implemented";
+    if (result == 10) return "Not supported";
+    if (result == 11) return "Not found";
+    if (result == 12) return "Already initialized";
+    if (result == 13) return "Not initialized";
+    if (result == 14) return "Invalid format";
+    if (result == 15) return "Wrong state";
+    if (result == 16) return "File not open";
+    return "Unknown error";
 }
 
 } // namespace TabDisplay

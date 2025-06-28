@@ -1,9 +1,14 @@
 package com.example.secondscreen
 
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.*
 import android.widget.TextView
@@ -16,10 +21,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var surfaceView: SurfaceView
     private lateinit var statusText: TextView
     private lateinit var debugText: TextView
+    private var debugReceiver: BroadcastReceiver? = null
+    private val debugHandler = Handler(Looper.getMainLooper())
+    private val debugLines = mutableListOf<String>()
+    private val maxDebugLines = 10
 
     companion object {
         private const val TAG = "TabDisplay_MainActivity"
         private const val KEY_FIRST_RUN_COMPLETED = "first_run_completed"
+        
+        // Debug broadcast actions
+        const val ACTION_DEBUG_UPDATE = "com.example.secondscreen.DEBUG_UPDATE"
+        const val EXTRA_DEBUG_MESSAGE = "debug_message"
+        const val EXTRA_DEBUG_LEVEL = "debug_level"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +49,9 @@ class MainActivity : AppCompatActivity() {
 
         Log.d(TAG, "UI elements initialized")
         updateStatus("TabDisplay - Starting up...", "Initializing components...")
+
+        // Set up debug receiver
+        setupDebugReceiver()
 
         // Hide system bars for full immersion
         hideSystemUI()
@@ -88,14 +105,42 @@ class MainActivity : AppCompatActivity() {
     private fun updateStatus(status: String, debug: String) {
         runOnUiThread {
             statusText.text = status
-            debugText.text = debug
+            addDebugLine(debug)
+            addDebugLine("Check logs with: adb logcat | grep TabDisplay")
             Log.d(TAG, "Status: $status | Debug: $debug")
         }
+    }
+    
+    private fun setupDebugReceiver() {
+        // Simplified - just show basic status for now
+        addDebugLine("Debug system initialized")
+        addDebugLine("Waiting for video service to start...")
+    }
+    
+    private fun addDebugLine(line: String) {
+        debugHandler.post {
+            debugLines.add(line)
+            if (debugLines.size > maxDebugLines) {
+                debugLines.removeAt(0)
+            }
+            debugText.text = debugLines.joinToString("\n")
+        }
+    }
+    
+    private fun sendDebugBroadcast(message: String, level: String = "INFO") {
+        val intent = Intent(ACTION_DEBUG_UPDATE).apply {
+            putExtra(EXTRA_DEBUG_MESSAGE, message)
+            putExtra(EXTRA_DEBUG_LEVEL, level)
+        }
+        sendBroadcast(intent)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "MainActivity onDestroy")
+        
+        // Nothing to unregister in simplified version
+        
         // Don't stop service here, since we want it to keep running in the background
     }
 

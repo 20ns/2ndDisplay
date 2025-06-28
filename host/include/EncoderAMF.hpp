@@ -65,6 +65,8 @@ public:
     void forceKeyFrame();
 
 private:
+    // Helper function for error strings
+    static const char* getAMFErrorString(int result);
     // AMF library handling
     bool loadAMFLibrary();
     void unloadAMFLibrary();

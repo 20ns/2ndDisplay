@@ -1,5 +1,6 @@
 package com.example.secondscreen
 
+import android.util.Log
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 
@@ -12,6 +13,10 @@ class PacketAssembler {
 
     // Maximum frames to keep in buffer at once
     private val maxBufferedFrames = 5
+    
+    companion object {
+        private const val TAG = "TabDisplay_PacketAssembler"
+    }
 
     /**
      * Add a packet to the assembler for processing
@@ -32,7 +37,19 @@ class PacketAssembler {
 
         // Get or create frame data
         val frame = frameBuffer.computeIfAbsent(header.frameId) {
+            Log.d(TAG, "Creating new frame ${header.frameId} with ${header.totalChunks} chunks")
             FrameData(header.totalChunks.toInt())
+        }
+        
+        // Check if frame was already created with different chunk count (should not happen)
+        if (frame.chunks.size != header.totalChunks.toInt()) {
+            Log.w(TAG, "Frame ${header.frameId} chunk count mismatch: expected ${header.totalChunks}, got ${frame.chunks.size}")
+            // Remove and recreate the frame with correct size
+            frameBuffer.remove(header.frameId)
+            val newFrame = FrameData(header.totalChunks.toInt())
+            frameBuffer[header.frameId] = newFrame
+            Log.d(TAG, "Recreated frame ${header.frameId} with correct chunk count ${header.totalChunks}")
+            return addPacket(header, payload) // Recursive call with new frame
         }
 
         // Add chunk to the appropriate position
@@ -49,6 +66,7 @@ class PacketAssembler {
             if (chunkIndex < frame.chunks.size) {
                 frame.chunks[chunkIndex] = payload
                 frame.receivedCount++
+                Log.v(TAG, "Frame ${header.frameId}: chunk $chunkIndex added, progress: ${frame.receivedCount}/${frame.chunks.size}")
             }
         }
 
@@ -216,7 +234,11 @@ class PacketAssembler {
         var isKeyFrame: Boolean = false
 
         fun isComplete(): Boolean {
-            return receivedCount == chunks.size
+            val complete = receivedCount == chunks.size
+            if (complete) {
+                Log.d(TAG, "Frame complete! receivedCount=$receivedCount, totalChunks=${chunks.size}")
+            }
+            return complete
         }
 
         fun canBeRepaired(): Boolean {

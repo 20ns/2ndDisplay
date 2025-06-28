@@ -19,6 +19,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
 import com.google.gson.Gson
 
 class VideoReceiverService : Service() {
@@ -91,10 +92,11 @@ class VideoReceiverService : Service() {
 
         // Initialize the components
         packetAssembler = PacketAssembler()
-        decoder = Decoder()
+        decoder = Decoder(this)
         touchSender = TouchSender()
 
         // Start network receiver and processing pipeline
+        logNetworkInterfaces()
         startNetworkReceiver()
         startProcessingPipeline()
     }
@@ -208,25 +210,34 @@ class VideoReceiverService : Service() {
     private fun startNetworkReceiver() {
         serviceScope.launch {
             try {
-                Log.d(TAG, "Starting UDP network receiver on port $UDP_PORT")
+                Log.d(TAG, "Starting UDP network receiver on port $UDP_PORT (all interfaces)")
                 udpSocket = DatagramSocket(null).apply {
                     reuseAddress = true
-                    bind(InetSocketAddress(UDP_PORT))
+                    // Bind to all interfaces (0.0.0.0) instead of specific interface
+                    bind(InetSocketAddress("0.0.0.0", UDP_PORT))
                 }
-                Log.d(TAG, "UDP socket successfully bound to port $UDP_PORT")
+                Log.d(TAG, "UDP socket successfully bound to port $UDP_PORT on all interfaces")
+                Log.d(TAG, "Socket bound to: ${udpSocket?.localSocketAddress}")
+                Log.d(TAG, "Socket info: localPort=${udpSocket?.localPort}, connected=${udpSocket?.isConnected}, closed=${udpSocket?.isClosed}")
+
+                // Add socket timeout to prevent indefinite blocking
+                udpSocket?.soTimeout = 5000 // 5 second timeout
 
                 val buffer = ByteArray(MAX_PACKET_SIZE)
                 val packet = DatagramPacket(buffer, buffer.size)
 
-                Log.d(TAG, "Starting UDP receive loop...")
+                Log.d(TAG, "Starting UDP receive loop with 5 second timeout...")
+                var receiveAttempts = 0
                 while (isActive) {
                     try {
-                        Log.v(TAG, "Waiting for UDP packet...")
+                        receiveAttempts++
+                        Log.d(TAG, "UDP receive attempt #$receiveAttempts - waiting for packet...")
                         udpSocket?.receive(packet)
 
                         Log.d(TAG, "*** RECEIVED UDP PACKET ***")
                         Log.d(TAG, "From: ${packet.address}:${packet.port}")
                         Log.d(TAG, "Size: ${packet.length} bytes")
+                        // sendDebugBroadcast("UDP packet received: ${packet.length} bytes from ${packet.address}", "NET") // Too frequent
 
                         // Copy the data to avoid buffer reuse issues
                         val data = packet.data.copyOfRange(0, packet.length)
@@ -239,6 +250,11 @@ class VideoReceiverService : Service() {
                         // Send to processing channel
                         packetChannel.send(data)
                         Log.d(TAG, "Packet sent to processing channel")
+                    } catch (e: java.net.SocketTimeoutException) {
+                        // Timeout is expected, just log periodically
+                        if (receiveAttempts % 12 == 0) { // Every minute (5s * 12)
+                            Log.d(TAG, "UDP receive timeout after ${receiveAttempts} attempts - still listening...")
+                        }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error receiving packet", e)
                         delay(100) // Brief delay before retrying
@@ -254,8 +270,10 @@ class VideoReceiverService : Service() {
         serviceScope.launch {
             try {
                 Log.d(TAG, "Starting packet processing pipeline...")
+                // sendDebugBroadcast("Packet processing pipeline started")
                 for (packetData in packetChannel) {
                     Log.d(TAG, "Processing packet: ${packetData.size} bytes")
+                    // sendDebugBroadcast("Processing packet: ${packetData.size} bytes") // Too frequent
                     
                     if (packetData.size < HEADER_SIZE) {
                         Log.w(TAG, "Packet too small: ${packetData.size} < $HEADER_SIZE")
@@ -264,7 +282,7 @@ class VideoReceiverService : Service() {
 
                     // Parse header
                     val header = parseHeader(packetData)
-                    Log.d(TAG, "Parsed header: seqId=${header.sequenceId}, frameId=${header.frameId}, flags=${header.flags}")
+                    Log.d(TAG, "Parsed header: seqId=${header.sequenceId}, frameId=${header.frameId}, chunk=${header.chunkIndex}/${header.totalChunks}, flags=${header.flags}")
 
                     // Check for control packet
                     if ((header.flags and FLAG_CONTROL_PACKET) != 0) {
@@ -285,6 +303,9 @@ class VideoReceiverService : Service() {
 
                     // Try to get a complete frame
                     packetAssembler?.getNextCompleteFrame()?.let { frameData ->
+                        Log.d(TAG, "Complete frame assembled: ${frameData.size} bytes")
+                        // sendDebugBroadcast("Frame assembled: ${frameData.size} bytes", "FRAME")
+                        
                         // Send to decoder
                         decoder?.decodeFrame(frameData, (header.flags and FLAG_KEYFRAME) != 0)
 
@@ -416,5 +437,47 @@ class VideoReceiverService : Service() {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager?.notify(NOTIFICATION_ID, createNotification(statusMessage))
         Log.d(TAG, "Notification updated: $statusMessage")
+    }
+    
+    private fun logNetworkInterfaces() {
+        try {
+            Log.d(TAG, "=== NETWORK INTERFACES DEBUG ===")
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            var interfaceCount = 0
+            
+            for (networkInterface in interfaces) {
+                interfaceCount++
+                Log.d(TAG, "Interface #$interfaceCount: ${networkInterface.name}")
+                Log.d(TAG, "  Display Name: ${networkInterface.displayName}")
+                Log.d(TAG, "  Is Up: ${networkInterface.isUp}")
+                Log.d(TAG, "  Is Loopback: ${networkInterface.isLoopback}")
+                
+                val addresses = networkInterface.inetAddresses
+                var addressCount = 0
+                for (address in addresses) {
+                    addressCount++
+                    Log.d(TAG, "    IP #$addressCount: ${address.hostAddress} (${address.javaClass.simpleName})")
+                }
+                
+                if (addressCount == 0) {
+                    Log.d(TAG, "    No IP addresses")
+                }
+            }
+            Log.d(TAG, "=== END NETWORK INTERFACES ===")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error logging network interfaces", e)
+        }
+    }
+    
+    private fun sendDebugBroadcast(message: String, level: String = "INFO") {
+        try {
+            val intent = Intent("com.example.secondscreen.DEBUG_UPDATE").apply {
+                putExtra("debug_message", message)
+                putExtra("debug_level", level)
+            }
+            sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to send debug broadcast: ${e.message}")
+        }
     }
 }
